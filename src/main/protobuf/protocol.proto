@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option java_package = "pfrommer.necro.net";
+option java_outer_classname = "Protocol";
+
+// All client -> server commands
+
+message Connect {
+	string name = 1;
+}
+
+// The only direct server -> client
+// reply is on connection
+
+message Connected {
+	bool success = 1;
+	int64 id = 2;
+}
+
+// Server -> client status updates
+
+// Wraps all possible events
+message Event {
+	enum Type {
+		CONNECT = 0;
+		CONNECTED = 1;
+	}
+	Type type = 1;
+	oneof value {
+		Connect connect = 2;
+		Connected connected = 3;
+	}
+}
+
+message Message {
+	repeated Event events = 1;
+}
