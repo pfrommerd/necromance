@@ -3,6 +3,34 @@ syntax = "proto3";
 option java_package = "pfrommer.necro.net";
 option java_outer_classname = "Protocol";
 
+// All entity serializations
+message Unit {
+	int64 owner = 1;
+	float x = 2;
+	float y = 3;
+	float theta = 4;
+	float speed = 5;
+	float maxSpeed = 6;
+	float health = 7;
+}
+
+message Rock {
+	float x = 1;
+	float y = 2;
+}
+
+message Entity {
+	int64 id = 1;
+	oneof type {
+		Rock rock = 2;
+		Unit knight = 3;
+	}
+}
+
+//
+// ------------- Events and Commands ------------------
+//
+
 // All client -> server commands
 
 message Connect {
@@ -19,16 +47,44 @@ message Connected {
 
 // Server -> client status updates
 
+message PlayerAdded {
+	int64 id = 1;
+	string name = 2;
+}
+
+message EntityAdded {
+	Entity entity = 1;
+}
+
+message EntityRemoved {
+	int64 id = 1;
+}
+
+// Entity/Unit updates
+
+message Run {
+	int64 id = 1;
+	float theta = 2;
+	float speed = 3;
+}
+
+message Moved {
+	int64 id = 1;
+	float x = 2;
+	float y = 3;
+}
+
 // Wraps all possible events
 message Event {
-	enum Type {
-		CONNECT = 0;
-		CONNECTED = 1;
-	}
-	Type type = 1;
-	oneof value {
-		Connect connect = 2;
-		Connected connected = 3;
+	oneof type {
+		Connect connect = 1;
+		Connected connected = 2;
+
+		EntityAdded entityAdded = 5;
+		EntityRemoved entityRemoved = 6;
+
+		Run run = 7; // Unit running
+		Moved moved = 8; // Unit moved
 	}
 }
 

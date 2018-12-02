@@ -1,12 +1,15 @@
 package pfrommer.necro.game;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import pfrommer.necro.net.Protocol.Message;
+import pfrommer.necro.net.Protocol;
+import pfrommer.necro.net.Protocol.Event.TypeCase;
+import pfrommer.necro.util.Point;
 import pfrommer.necro.util.Renderer;
 
 // Represents the game state
@@ -18,9 +21,8 @@ import pfrommer.necro.util.Renderer;
 
 // The server arena controller actually does the game logic
 // while the client arena controllers just update the state
-public class Arena {
+public class Arena implements EventListener, EventProducer {
 	private HashMap<Long, Entity> entities = new HashMap<Long, Entity>();
-	private HashMap<Long, Player> players = new HashMap<Long, Player>();
 	
 	private Set<EventListener> listeners = new HashSet<EventListener>();
 	
@@ -43,44 +45,69 @@ public class Arena {
 	public void removeListener(EventListener l) { listeners.remove(l); }
 	
 	public void fireEvent(Event e) {
-		for (EventListener l : listeners) l.onEvent(e);
+		for (EventListener l : listeners) l.handleEvent(e);
 	}
 	
-	public Player getPlayer(long playerId) { return players.get(playerId); }
-	
-	public boolean hasPlayer(String name) {
-		for (Player p : players.values()) {
-			if (p.getName().equals(name)) return true;
-		}
-		return false;
+	public void handleEvent(Event e) {
+		e.apply(this);
 	}
 	
-	public void addPlayer(Player p) {
-		players.put(p.getID(), p);
-		// Fire a player added event
-		fireEvent(new PlayerAddedEvent(p));
-	}
-	
-	public void removePlayer(Player p) {
-		players.remove(p.getID());
-		// Fire a player removed event
-		fireEvent(new PlayerRemovedEvent(p));
-	}
+	public Entity getEntity(long entityID) { return entities.get(entityID); }
+	public Collection<Entity> getEntities() { return entities.values(); }
 	
 	public void addEntity(Entity e) {
 		e.setArena(this);
-		entities.put(e.getID(), e);		
+		entities.put(e.getID(), e);	
+		
+		fireEvent(new EntityAddedEvent(e));
 	}
 	
 	public void removeEntity(Entity e) {
-		entities.remove(e.getID());		
+		entities.remove(e.getID());
+		
+		fireEvent(new EntityRemovedEvent(e.getID()));
 	}
 	
-	// Will render the arena from the perspective of a given player
-	// Not used on the server side, only the client
-	public void render(Renderer r, Player player) {
-		if (background != null) r.drawImage(background, 0, 0, width, height, 0);
+	public Set<Unit> getUnitsFor(long player) {
+		Set<Unit> units = new HashSet<Unit>();
+		for (Entity e : entities.values()) {
+			if (e instanceof Unit) {
+				Unit u = (Unit) e;
+				if (u.getOwner() == player) units.add(u);
+			}
+		}
+		return units;
+	}
 	
+	public Point calcCameraPos(long playerID, float camWidth, float camHeight) {
+		// Just go through everything associated with this player
+		// and average the position
+		int n = 0;
+		float x = 0;
+		float y = 0;
+		for (Unit u : getUnitsFor(playerID)) {
+			x += u.getX();
+			y += u.getY();
+			n++;
+		}
+		
+		x /= n;
+		y /= n;
+		
+		// This is the camera x, y, but we need to bound it so it doesn't go
+		// over the edge of the arena
+		if (camWidth < width) x = Math.max(-width/2 + camWidth/2,
+								 Math.min(width/2 - camWidth/2, x));
+		else x = 0;
+		if (camHeight < height) y = Math.max(-height/2 + camHeight/2,
+									Math.min(height/2 - camHeight/2, y));
+		else y = 0;
+		return new Point(x, y);
+	}
+
+	public void render(Renderer r) {
+		if (background != null) r.drawImage(background, 0, 0, width, height, 0);
+		
 		// Draw all of the entities, sorted by their
 		// y coordinate
 		Set<Entity> sortedEntities = new TreeSet<Entity>(new Comparator<Entity>() {
@@ -103,49 +130,15 @@ public class Arena {
 		for (Entity e : entities.values()) e.update(this, dt);
 	}
 	
-	// All of the Arena related events
-	// all private, since they should not be
-	// instantiated outside of the parser
-	// or the arena class itself
-	
-	private static class PlayerAddedEvent extends Event {
-		private Player player;
-		
-		public PlayerAddedEvent(Player p) {
-			this.player = p;
-		}
-		
-		public void apply(Arena a) {
-			a.addPlayer(player);
-		}
-
-		@Override
-		public void pack(Message.Builder msg) {
-		}
-	}
-	
-	private static class PlayerRemovedEvent extends Event {
-		private Player player;
-		
-		public PlayerRemovedEvent(Player p) {
-			this.player = p;
-		}
-		
-		public void apply(Arena a) {
-			a.removePlayer(player);
-		}
-
-		@Override
-		public void pack(Message.Builder msg) {
-		}
-	}
-	
-	private static class EntityAddedEvent extends Event {
+	// Arena-related events
+	public static class EntityAddedEvent extends Event {
 		private Entity entity;
 		
 		public EntityAddedEvent(Entity e) {
 			this.entity = e;
 		}
+		
+		public Entity getEntity() { return entity; }
 		
 		@Override
 		public void apply(Arena a) {
@@ -153,24 +146,47 @@ public class Arena {
 		}
 
 		@Override
-		public void pack(Message.Builder msg) {
+		public void pack(Protocol.Event.Builder msg) {
+			entity.pack(msg.getEntityAddedBuilder().getEntityBuilder());
+		}
+		
+		static {
+			Event.Parser.add(TypeCase.ENTITYADDED, new Event.Parser() {
+				@Override
+				public Event unpack(Protocol.Event e) {
+					return new EntityAddedEvent(
+							Entity.unpack(e.getEntityAdded().getEntity()));
+				}
+			});
 		}
 	}
 	
-	private static class EntityRemovedEvent extends Event {
-		private Entity entity;
+	public static class EntityRemovedEvent extends Event {
+		private long entityID;
 		
-		public EntityRemovedEvent(Entity e) {
-			this.entity = e;
+		public EntityRemovedEvent(long entityID) {
+			this.entityID = entityID;
 		}
+		
+		public long getEntityID() { return entityID; }
 		
 		@Override
 		public void apply(Arena a) {
-			a.removeEntity(entity);
+			a.removeEntity(a.getEntity(entityID));
 		}
 
 		@Override
-		public void pack(Message.Builder msg) {
+		public void pack(Protocol.Event.Builder msg) {
+			msg.getEntityRemovedBuilder().setId(entityID);
+		}
+		
+		static {
+			Event.Parser.add(TypeCase.ENTITYREMOVED, new Event.Parser() {
+				@Override
+				public Event unpack(Protocol.Event e) {
+					return new EntityRemovedEvent(e.getEntityRemoved().getId());
+				}
+			});
 		}
 	}
 }

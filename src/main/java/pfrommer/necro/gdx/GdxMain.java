@@ -14,7 +14,7 @@ public class GdxMain {
 		private GdxDisplay display;
 		private GdxRenderer renderer;
 		public void create() {
-			Gdx.graphics.setTitle("Tank Combat");
+			Gdx.graphics.setTitle("Necromance");
 			display = new GdxDisplay();
 			renderer = new GdxRenderer();
 			app = new App(display);
@@ -26,7 +26,10 @@ public class GdxMain {
 		}
 
 		public void render() {
-			Gdx.gl.glClearColor(1, 1, 1, 0);
+			// Update the display input
+			display.update();
+			
+			Gdx.gl.glClearColor(0, 0, 0, 0);
 			Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT);
 			renderer.begin();
 			app.render(renderer, Gdx.graphics.getDeltaTime());
