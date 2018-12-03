@@ -76,8 +76,14 @@ public class SpawnManager {
 		// Go through all of the players in the arena
 		// and check if any of them need to be respawned
 		for (long player : arena.getPlayers()) {
-			// Ignore players that have units
-			if (arena.getPlayerUnits(player).size() > 0) continue;
+			boolean skip = false;
+			for (Unit u : arena.getPlayerUnits(player)) {
+				if (u.getHealth() > 0) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip) continue;
 			
 			long newHorde = arena.createHorde();
 			

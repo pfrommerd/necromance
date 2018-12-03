@@ -40,6 +40,14 @@ public class ClientHandler implements EventListener {
 		}
 	}
 	
+	public void disconnect() {
+		if (io.isClosed()) return;
+		arena.removePlayer(playerID);
+		try {
+			io.close();
+		} catch (IOException e) {}
+	}
+	
 	// When an event occurrs in-game
 	// add to the outbound queue to
 	// be written on the next handle()
@@ -70,14 +78,22 @@ public class ClientHandler implements EventListener {
 		// send the message
 		Protocol.Message msg  = builder.build();
 		// Write the byte buffer
-		io.write(ByteBuffer.wrap(msg.toByteArray()));
+		try {
+			io.write(ByteBuffer.wrap(msg.toByteArray()));
+		} catch (IOException ex) {
+			disconnect();
+		}
 	}
 	
 	public void receiveEvents() throws IOException {
 		ByteBuffer buf = null;
-		while ((buf = io.read()) != null) {
-			Protocol.Message m = Protocol.Message.parseFrom(buf);
-			onMessage(m);
+		try {
+			while ((buf = io.read()) != null) {
+				Protocol.Message m = Protocol.Message.parseFrom(buf);
+				onMessage(m);
+			}
+		} catch (IOException ex) {
+			disconnect();
 		}
 	}
 }

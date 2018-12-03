@@ -15,13 +15,20 @@ public class IOManager {
 		channel = c;
 	}
 	
+	public boolean isClosed() {
+		return channel.isConnected();
+	}
+	
+	public void close() throws IOException {
+		channel.close();
+	}
+	
 	public void write(ByteBuffer msg) throws IOException {
 		byte[] data = msg.array();
 		ByteBuffer m = ByteBuffer.allocate(4 + data.length);
 		m.putInt(data.length);
 		m.put(data);
 		m.rewind();
-		channel.write(m);
 	}
 	
 	public ByteBuffer read() throws IOException {

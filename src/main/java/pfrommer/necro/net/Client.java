@@ -106,7 +106,7 @@ public class Client implements EventListener {
 			msg.getAssignIDBuilder().setId(id);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.ASSIGNID, new Event.Parser() {
 				@Override
 				public Event unpack(pfrommer.necro.net.Protocol.Event e) {

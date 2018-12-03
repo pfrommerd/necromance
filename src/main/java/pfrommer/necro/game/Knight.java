@@ -200,7 +200,7 @@ public class Knight extends Unit {
 	}
 
 	// For unpacking
-	static {
+	public static void register() {
 		Entity.Parser.add(TypeCase.KNIGHT, new Entity.Parser() {
 			@Override
 			public Entity unpack(Protocol.Entity e) {

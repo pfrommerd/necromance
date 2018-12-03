@@ -8,16 +8,27 @@ import com.badlogic.gdx.graphics.GL30;
 
 import pfrommer.necro.client.App;
 
-public class GdxMain {
+public class GdxLauncher {
 	protected static class GdxWrapper implements ApplicationListener {
 		private App app;
 		private GdxDisplay display;
 		private GdxRenderer renderer;
+		
+		private boolean host;
+		private String hostname;
+		private int port;
+		
+		public GdxWrapper(boolean host, String hostname, int port) {
+			this.host = host;
+			this.hostname = hostname;
+			this.port = port;
+		}
+		
 		public void create() {
 			Gdx.graphics.setTitle("Necromance");
 			display = new GdxDisplay();
 			renderer = new GdxRenderer();
-			app = new App();
+			app = new App(host, hostname, port);
 			app.create(display);
 		}
 
@@ -50,8 +61,24 @@ public class GdxMain {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void launch(boolean host, String hostname, int port) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		new LwjglApplication(new GdxWrapper(), config);
+		new LwjglApplication(new GdxWrapper(host, hostname, port), config);
+	}
+	
+	public static void main(String[] args) {
+		boolean host = true;
+		String hostname = "0.0.0.0";
+		int port = 6000;
+		
+		if (args.length > 1) {
+			host = args[0].equals("host");
+			hostname = args[1];
+			try {
+				port = Integer.parseInt(args[2]);
+			} catch (Exception e) {} // If not a number
+		}
+		
+		GdxLauncher.launch(host, hostname, port);
 	}
 }

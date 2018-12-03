@@ -273,7 +273,7 @@ public class Arena implements EventListener, EventProducer {
 			entity.pack(msg.getEntityAddedBuilder().getEntityBuilder());
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.ENTITYADDED, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
@@ -303,7 +303,7 @@ public class Arena implements EventListener, EventProducer {
 			msg.getEntityRemovedBuilder().setId(entityID);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.ENTITYREMOVED, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
@@ -332,7 +332,7 @@ public class Arena implements EventListener, EventProducer {
 			msg.getPlayerAddedBuilder().setId(playerID);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.PLAYERADDED, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
@@ -359,7 +359,7 @@ public class Arena implements EventListener, EventProducer {
 			msg.getPlayerRemovedBuilder().setId(playerID);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.PLAYERREMOVED, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {

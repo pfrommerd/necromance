@@ -176,7 +176,7 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 				.setY(y);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.MOVED, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {

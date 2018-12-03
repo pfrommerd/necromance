@@ -69,12 +69,16 @@ public class Server implements EventListener {
 
 		for (Entry<SocketChannel, ClientHandler> e : clientHandlerMap.entrySet()) {
 			// We received some bytes!
-			client = e.getKey();	
-			
+			client = e.getKey();
 			ClientHandler handler = e.getValue();
 			if (handler == null)
 				throw new IOException("Unknown client!");
-			handler.receiveEvents();
+			if (!client.isConnected()) {
+				handler.disconnect();
+				clientHandlerMap.remove(client);
+			} else {
+				handler.receiveEvents();
+			}
 		}
 	}
 }

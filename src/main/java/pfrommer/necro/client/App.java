@@ -5,6 +5,7 @@ import java.io.IOException;
 import pfrommer.necro.game.Arena;
 import pfrommer.necro.game.SpawnManager;
 import pfrommer.necro.net.Client;
+import pfrommer.necro.net.Parsers;
 import pfrommer.necro.net.Server;
 import pfrommer.necro.util.Display;
 import pfrommer.necro.util.Point;
@@ -17,11 +18,15 @@ public class App {
 	public static final float CAMERA_HEIGHT = 50;
 	
 
+	private boolean host;
+	private String hostname;
+	private int port;
+	
 	private Arena clientArena;
-	private Arena serverArena;
 	
 	// The internal server
-	// only set if not connected
+	// only set if not hosting
+	private Arena serverArena;
 	private Server server;
 	private SpawnManager spawner;
 
@@ -29,30 +34,40 @@ public class App {
 	private LocalController input;
 
 	// Nothing should happen in the constructor
-	public App() {}
+	public App(boolean host, String hostname, int port) {
+		this.host = host;
+		this.hostname = hostname;
+		this.port = port;
+		
+		// Register all the parsers
+		Parsers.registerAll();
+	}
 	
 	public void create(Display display) {
 		clientArena = new Arena(ARENA_WIDTH, ARENA_HEIGHT);
-		serverArena = new Arena(ARENA_WIDTH, ARENA_HEIGHT);
-
-		server = new Server(serverArena, "localhost", 6000);
-		client = new Client("localhost", 6000);
 		
-		spawner = new SpawnManager(serverArena);
-		spawner.addBot();
-		spawner.addBot();
-		spawner.addBot();
-		spawner.addBot();
+		if (host) serverArena = new Arena(ARENA_WIDTH, ARENA_HEIGHT);
+		if (host) server = new Server(serverArena, hostname, port);
+		
+		client = new Client(hostname, port);
+		
+		if (host) {
+			spawner = new SpawnManager(serverArena);
+			spawner.addBot();
+			spawner.addBot();
+			spawner.addBot();
+			spawner.addBot();
+		}
 		
 		// Update the client arena from the server
 		client.addListener(clientArena);
 		
 		long playerID = 0;
 		try {
-			server.open();
+			if (host) server.open();
 			client.open();
-			server.read(); // Process the client connection
-			server.write();
+			if (host) server.read(); // Process the client connection
+			if (host) server.write();
 			// ready the client id
 			playerID = client.waitForID();
 		} catch (IOException e) { e.printStackTrace(); }
@@ -69,7 +84,7 @@ public class App {
 		try {
 			// Write out any server updates to the
 			// client
-			server.write();
+			if (host) server.write();
 			client.read();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -86,14 +101,16 @@ public class App {
 
 		try {
 			client.write();
-			server.read();
+			if (host) server.read();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 		// Update the server
-		serverArena.update(dt);
-		spawner.update(dt); // Spawn in new things if units have died
+		if (host) {
+			serverArena.update(dt);
+			spawner.update(dt); // Spawn in new things if units have died
+		}
 	}
 
 	public void pause(Display display) {

@@ -190,7 +190,7 @@ public abstract class Unit extends Entity {
 			msg.getOwnerChangeBuilder().setId(unitID)
 									   .setNewOwner(newOwner);
 		}
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.OWNERCHANGE, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
@@ -226,7 +226,7 @@ public abstract class Unit extends Entity {
 					.setDamage(damage);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.DAMAGE, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
@@ -258,7 +258,7 @@ public abstract class Unit extends Entity {
 			msg.getTargetBuilder().setId(id).setTargetID(targetID);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.TARGET, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
@@ -287,7 +287,7 @@ public abstract class Unit extends Entity {
 			msg.getNecromanceBuilder().setId(id);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.NECROMANCE, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
@@ -319,7 +319,7 @@ public abstract class Unit extends Entity {
 			msg.getRunBuilder().setId(id).setTheta(theta).setSpeed(speed);
 		}
 		
-		static {
+		public static void register() {
 			Event.Parser.add(TypeCase.RUN, new Event.Parser() {
 				@Override
 				public Event unpack(Protocol.Event e) {
