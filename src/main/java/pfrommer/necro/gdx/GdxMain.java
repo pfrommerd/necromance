@@ -17,12 +17,12 @@ public class GdxMain {
 			Gdx.graphics.setTitle("Necromance");
 			display = new GdxDisplay();
 			renderer = new GdxRenderer();
-			app = new App(display);
-			app.create();
+			app = new App();
+			app.create(display);
 		}
 
 		public void resize(int width, int height) {
-			app.resize(width, height);
+			app.resize(display, width, height);
 		}
 
 		public void render() {
@@ -32,20 +32,20 @@ public class GdxMain {
 			Gdx.gl.glClearColor(0, 0, 0, 0);
 			Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT);
 			renderer.begin();
-			app.render(renderer, Gdx.graphics.getDeltaTime());
+			app.render(display, renderer, Gdx.graphics.getDeltaTime());
 			renderer.finish();
 		}
 
 		public void pause() {
-			app.pause();
+			app.pause(display);
 		}
 
 		public void resume() {
-			app.resume();
+			app.resume(display);
 		}
 
 		public void dispose() {
-			app.dispose();
+			app.dispose(display);
 			app = null;
 		}
 	}

@@ -81,7 +81,8 @@ public class GdxRenderer extends Renderer {
 	}
 
 	@Override
-	public void drawImage(String image, float x, float y, float w, float h, float rot) {
+	public void drawImage(String image, Color tint,
+							float x, float y, float w, float h, float rot) {
 		if (!textures.containsKey(image)) {
 			// Load the image
 			manager.load(image, Texture.class);
@@ -95,10 +96,23 @@ public class GdxRenderer extends Renderer {
 			mode = RenderMode.BATCH;
 			startMode(mode);
 		}
+		if (tint != null) {
+			batch.setColor(new com.badlogic.gdx.graphics.Color(tint.getRed(), tint.getGreen(),
+																tint.getBlue(), tint.getAlpha()));
+		}
 		TextureRegion region = textures.get(image);
 		batch.draw(region,
 				x - w/2, y - h/2, w/2, h/2,
 				w, h, 1, 1,
 				(float) Math.toDegrees(rot));
+		
+		if (tint != null)
+			batch.setColor(com.badlogic.gdx.graphics.Color.WHITE); // Reset tint
+	}
+
+	@Override
+	public void drawImage(String image,
+							float x, float y, float w, float h, float rot) {
+		drawImage(image, null, x, y, w, h, rot);
 	}
 }

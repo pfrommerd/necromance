@@ -10,20 +10,34 @@ import java.util.Queue;
 import pfrommer.necro.game.Arena;
 import pfrommer.necro.game.Event;
 import pfrommer.necro.game.EventListener;
+import pfrommer.necro.net.Client.AssignID;
 
 public class ClientHandler implements EventListener {
 	private Arena arena;
-	private Server server;
-
+	private long playerID;
+	
 	// Mnaages sending/receiving packets of data
 	private IOManager io;
 		
 	private Queue<Event> outbound = new LinkedList<Event>();
 	
-	public ClientHandler(Arena a, Server s, SocketChannel c) {
+	public ClientHandler(Arena a, SocketChannel c) {
 		this.arena = a;
-		this.server = s;
 		this.io = new IOManager(c);
+		
+		// Get a new player ID from the arena
+		// for this player
+		playerID = a.createPlayer();
+		
+		// Write the assign ID message separately
+		Protocol.Message.Builder builder = Protocol.Message.newBuilder();
+		(new AssignID(playerID)).pack(builder.addEventsBuilder());
+		Protocol.Message msg  = builder.build();
+		try {
+			io.write(ByteBuffer.wrap(msg.toByteArray()));
+		} catch (IOException e) {
+			throw new IllegalArgumentException("Could not write to the socket channel");
+		}
 	}
 	
 	// When an event occurrs in-game

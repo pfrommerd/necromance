@@ -36,8 +36,8 @@ public class GdxDisplay implements Display {
 	public void update() {
 		boolean nl = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
 		boolean nr = Gdx.input.isButtonPressed(Input.Buttons.RIGHT);
-		x = (Gdx.input.getX() - getWidth() / 2) / (float) getWidth();
-		y = -(Gdx.input.getY() - getHeight() / 2) / (float) getHeight();
+		x = (Gdx.input.getX() - getWidth() / 2) / ((float) getWidth() / 2f);
+		y = -(Gdx.input.getY() - getHeight() / 2) / ((float) getHeight() / 2f);
 		
 		justLeftPress = leftPress != nl ? nl : false;
 		justRightPress = rightPress != nr ? nr : false;

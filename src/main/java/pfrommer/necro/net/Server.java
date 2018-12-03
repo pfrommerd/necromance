@@ -2,7 +2,6 @@ package pfrommer.necro.net;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
@@ -22,7 +21,6 @@ public class Server implements EventListener {
 	
 	// For creating players/entities
 	private Arena arena;
-	private long nextID;
 	
 	public Server(Arena arena, String host, int port) {
 		if (host == null) throw new IllegalArgumentException();
@@ -34,7 +32,6 @@ public class Server implements EventListener {
 		this.arena.addListener(this);
 	}
 	
-	public long nextID() { return nextID++; }
 	
 	@Override
 	public void handleEvent(Event e) {
@@ -67,7 +64,7 @@ public class Server implements EventListener {
 			// We got a new connection!
 			client.configureBlocking(false);
 			// Add a string builder for this client
-			clientHandlerMap.put(client, new ClientHandler(arena, this, client));
+			clientHandlerMap.put(client, new ClientHandler(arena, client));
 		}
 
 		for (Entry<SocketChannel, ClientHandler> e : clientHandlerMap.entrySet()) {

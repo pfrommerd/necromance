@@ -5,21 +5,33 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import pfrommer.necro.net.Protocol;
-import pfrommer.necro.util.Rectangle;
+import pfrommer.necro.net.Protocol.Event.TypeCase;
+import pfrommer.necro.util.Circle;
 import pfrommer.necro.util.Renderer;
 
+
+// The entity itself manages the position
+// and syncs that using the render system
+// everything else needs to be managed by the subtypes
 public abstract class Entity implements Comparable<Entity>, EventProducer {
 	private long id;
 	private Arena arena;
 	
 	private HashSet<EventListener> listeners = new HashSet<>();
-		
-	public Entity(long id) {
+
+	// Mutating state
+	protected float x;
+	protected float y;
+	
+	public Entity(long id, float x, float y) {
 		this.arena = null;
 		this.id = id;
+		this.x = x;
+		this.y = y;
 	}
 	
 	public void setArena(Arena a) { this.arena = a; }
+	
 	public Arena getArena() { return arena; }
 	
 	public void addListener(EventListener l) { listeners.add(l); }
@@ -27,20 +39,16 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 	
 	public long getID() { return id; }
 	
-	public abstract float getX();
-	public abstract float getY();
-	public abstract float getZ(); // Used for the draw order
+	public float getX() { return x; }
+	public float getY() { return y; }
 	
-	// Gets the collision rectangle
-	public abstract Rectangle getCollider();
+	// The Z is used for the rendering order
+	public float getZ() { return y; } // Z is just the y in this case
 	
-	public abstract void render(Renderer r);
+	// Gets the collision shape, if any
+	public abstract Circle getCollider();
 	
-	// Runs the game logic for this entity
-	public abstract void update(Arena a, float dt);
-	
-	// Serialization
-	public abstract void pack(Protocol.Entity.Builder builder);
+	public abstract void render(Renderer r, float dt);
 	
 	// To be called by the update logic
 	// whenever an event should be fired
@@ -51,6 +59,52 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 			l.handleEvent(e);
 		}
 	}
+	
+	protected boolean intersecting() {
+		if (getArena() != null && getCollider() != null) {
+			for (Entity e : getArena().getEntities()) {
+				Circle s = getCollider();
+				Circle c = e.getCollider();
+				if (e != this && s.intersects(c)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	protected void move(float x, float y) {		
+		// the original x and y, prevents us from moving into things
+		// we shouldn't
+		float ox = this.x;
+		float oy = this.y;		
+		this.x = x;
+		this.y = y;
+		if (intersecting()) {
+			this.x = ox;
+			this.y = oy;
+		}
+		// If we are still intersecting even
+		// after moving back, this means we spawned
+		// ontop of a unit or something
+		if (intersecting()) {
+			float dx = 1/100f;
+			do {
+				// Move along x
+				this.x += dx;
+			} while (intersecting());
+		}
+		
+		fireEvent(new Moved(getID(), this.x, this.y));
+	}
+	
+	// Runs the game logic for this entity
+	public abstract void update(Arena a, float dt);
+	
+	// Serialization for this entity (different entity to entity)
+	public abstract void pack(Protocol.Entity.Builder builder);
+
+	// Utilities
 	
 	@Override
 	public int hashCode() {
@@ -92,5 +146,44 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 		if (p == null)
 			throw new IllegalArgumentException("Could not unpack entity type");
 		return p.unpack(e);
+	}
+	
+	// for position change
+	public static class Moved extends Event {
+		private long unitID;
+		private float x;
+		private float y;
+		
+		public Moved(long id, float x, float y) {
+			this.unitID = id;
+			this.x = x;
+			this.y = y;
+		}
+		
+		@Override
+		public void apply(Arena a) {
+			Entity e = a.getEntity(unitID);
+			if (e == null) return;
+			Unit u = (Unit) e;
+			u.move(x, y);
+		}
+
+		@Override
+		public void pack(Protocol.Event.Builder msg) {
+			msg.getMovedBuilder()
+				.setId(unitID)
+				.setX(x)
+				.setY(y);
+		}
+		
+		static {
+			Event.Parser.add(TypeCase.MOVED, new Event.Parser() {
+				@Override
+				public Event unpack(Protocol.Event e) {
+					Protocol.Moved m = e.getMoved();
+					return new Moved(m.getId(), m.getX(), m.getY());
+				}
+			});
+		}
 	}
 }

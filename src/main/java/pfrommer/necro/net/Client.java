@@ -13,6 +13,7 @@ import pfrommer.necro.game.Arena;
 import pfrommer.necro.game.Event;
 import pfrommer.necro.game.EventListener;
 import pfrommer.necro.net.Protocol.Event.Builder;
+import pfrommer.necro.net.Protocol.Event.TypeCase;
 
 public class Client implements EventListener {
 	private String host;
@@ -35,12 +36,30 @@ public class Client implements EventListener {
 		outbound.add(e);
 	}
 	
-	// Opens the socket
+	// Opens the socket and returns the assigned id
 	public void open() throws IOException {
 		InetSocketAddress addr = new InetSocketAddress(host, port);
 		SocketChannel client = SocketChannel.open(addr);
 		client.configureBlocking(false);
 		io = new IOManager(client);
+	}
+	
+	public long waitForID() throws IOException {
+		ByteBuffer buf = null;
+		do {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				break;
+			}
+		} while ((buf = io.read()) == null);
+		
+		Protocol.Message m = Protocol.Message.parseFrom(buf);
+		List<Event> e = Event.unpack(m);
+		if (e.size() != 1) throw new IllegalArgumentException("Expected single AssignID");
+		Event event = e.get(0);
+		if (!(event instanceof AssignID)) throw new IllegalArgumentException("Not an assignid");
+		return ((AssignID) event).getID();
 	}
 	
 	public void read() throws IOException {
@@ -58,6 +77,7 @@ public class Client implements EventListener {
 	public void write() throws IOException {
 		if (outbound.isEmpty()) return;
 		Protocol.Message.Builder builder = Protocol.Message.newBuilder();
+
 		Event e = null;
 		while ((e = outbound.poll()) != null) {
 			e.pack(builder.addEventsBuilder());
@@ -69,20 +89,31 @@ public class Client implements EventListener {
 	}
 	
 	// Received by the client upon connecting
-	
 	public static class AssignID extends Event {
-
-		@Override
-		public void apply(Arena a) {
-			// TODO Auto-generated method stub
-			
+		private long id;
+		
+		public AssignID(long id) {
+			this.id = id;
 		}
+		
+		public long getID() { return id; }
+		
+		@Override
+		public void apply(Arena a) {}
 
 		@Override
 		public void pack(Builder msg) {
-			
+			msg.getAssignIDBuilder().setId(id);
 		}
 		
+		static {
+			Event.Parser.add(TypeCase.ASSIGNID, new Event.Parser() {
+				@Override
+				public Event unpack(pfrommer.necro.net.Protocol.Event e) {
+					return new AssignID(e.getAssignID().getId());
+				}
+			});
+		}
 	}
 }
 

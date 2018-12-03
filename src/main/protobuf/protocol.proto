@@ -6,24 +6,25 @@ option java_outer_classname = "Protocol";
 // All entity serializations
 message Unit {
 	int64 owner = 1;
-	float x = 2;
-	float y = 3;
+	int64 hordeID = 2;
+	int64 targetID = 3;
 	float theta = 4;
 	float speed = 5;
 	float maxSpeed = 6;
 	float health = 7;
+	float maxHealth = 8;
 }
 
-message Rock {
-	float x = 1;
-	float y = 2;
-}
+// Just a plain entity
+message Rock {}
 
 message Entity {
 	int64 id = 1;
+	float x = 2;
+	float y = 3;
 	oneof type {
-		Rock rock = 2;
-		Unit knight = 3;
+		Rock rock = 4;
+		Unit knight = 5;
 	}
 }
 
@@ -31,25 +32,21 @@ message Entity {
 // ------------- Events and Commands ------------------
 //
 
-// All client -> server commands
-
-message Connect {
-	string name = 1;
-}
-
 // The only direct server -> client
-// reply is on connection
+// non-event message
 
-message Connected {
-	bool success = 1;
-	int64 id = 2;
+message AssignID {
+	int64 id = 1;
 }
 
 // Server -> client status updates
 
 message PlayerAdded {
 	int64 id = 1;
-	string name = 2;
+}
+
+message PlayerRemoved {
+	int64 id = 1;
 }
 
 message EntityAdded {
@@ -62,10 +59,14 @@ message EntityRemoved {
 
 // Entity/Unit updates
 
-message Run {
+message OwnerChange {
 	int64 id = 1;
-	float theta = 2;
-	float speed = 3;
+	int64 newOwner = 2;
+}
+
+message HordeChange {
+	int64 id = 1;
+	int64 newHorde = 2;
 }
 
 message Moved {
@@ -74,17 +75,45 @@ message Moved {
 	float y = 3;
 }
 
+message Run {
+	int64 id = 1;
+	float theta = 2;
+	float speed = 3;
+}
+
+message Damage {
+	int64 id = 1;
+	int64 attacker = 2;
+	float damage = 3;
+}
+
+message Target {
+	int64 id = 1;
+	int64 targetID = 2;
+}
+
+message Necromance {
+	int64 id = 1;
+}
+
 // Wraps all possible events
 message Event {
 	oneof type {
-		Connect connect = 1;
-		Connected connected = 2;
+		AssignID assignID = 1;
 
-		EntityAdded entityAdded = 5;
-		EntityRemoved entityRemoved = 6;
+		PlayerAdded playerAdded = 2;
+		PlayerRemoved playerRemoved = 3;
 
+		EntityAdded entityAdded = 4;
+		EntityRemoved entityRemoved = 5;
+
+		OwnerChange ownerChange = 6;
 		Run run = 7; // Unit running
 		Moved moved = 8; // Unit moved
+
+		Damage damage = 9;
+		Target target = 10;
+		Necromance necromance = 11;
 	}
 }
 

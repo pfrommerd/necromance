@@ -11,7 +11,7 @@ public class Color {
 	}
 	
 	public Color(float r, float g, float b) {
-		this(r, g, b, 0);
+		this(r, g, b, 1f);
 	}
 	
 	public float getRed() { return r; }

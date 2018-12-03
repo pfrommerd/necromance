@@ -9,6 +9,9 @@ public abstract class Renderer {
 	
 	// Draws given the path to the image, the rendering
 	// backend determines for itself how best to load the image
+	public abstract void drawImage(String image, Color tint,
+			float x, float y, float w, float h, float rot);
+	
 	public abstract void drawImage(String image,
 			float x, float y, float w, float h, float rot);
 }

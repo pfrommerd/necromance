@@ -10,7 +10,7 @@ public class IOManager {
 	private ByteBuffer header = ByteBuffer.allocate(4);
 	private ByteBuffer message = null;
 	private ByteBuffer data = ByteBuffer.allocate(256);
-	
+	private ByteBuffer processed = data.slice(); // The processed portion of the data buffer
 	public IOManager(SocketChannel c) {
 		channel = c;
 	}
@@ -25,49 +25,56 @@ public class IOManager {
 	}
 	
 	public ByteBuffer read() throws IOException {
-		while (channel.read(data) > 0) {
-			int bytes = data.position();
+		// If we have already processed
+		// everything in the data buffer,
+		// rewind reverything and reset the limits
+		if (data.position() > 0 &&
+				data.position() <= processed.position()) {
 			data.rewind();
-			
+			processed.rewind();
+		}
+				
+		while (processed.position() < data.position() ||
+				channel.read(data) > 0) {
 			if (header.remaining() > 0) {
-				data.limit(Math.min(bytes, header.remaining()));
-				header.put(data); // This will advance the data postition
+				// Limit to either the full amount read into the buffer
+				// or up to the remaining bytes in the header
+				processed.limit(Math.min(data.position(),
+								processed.position() + header.remaining()));
+				header.put(processed); // This will advance the processed position
 				// Check if we are done with the header
 				if (header.remaining() == 0) {
 					header.rewind();
 					int length = header.getInt();
+					if (Math.abs(length) > 100000)
+						throw new IllegalArgumentException("Something went terribly wrong");
 					message = ByteBuffer.allocate(length);
 				}
 			}
-			
-			// If we haven't finished with the header still, try and read again
-			if (message == null) {
-				data.rewind();
-				data.limit(data.capacity());
-				continue;
+			// If the header is done
+			if (message != null) {
+				processed.limit(Math.min(data.position(),
+								processed.position() + message.remaining()));
+				message.put(processed);
+				
+				// Check if we are done
+				if (message.remaining() == 0) {
+					ByteBuffer m = message;
+					m.rewind();
+					message = null;
+					header.rewind();
+					return m;
+				}
 			}
+
 			
-			// Limit the data to the remaining message bytes
-			// (+ any header bytes already read from the data buffer)
-			// but don't make it any larger than the current limit of the buffer
-			data.limit(Math.min(bytes,
-								data.position() + message.remaining()));
-			
-			// Add the data to the message
-			message.put(data);
-			
-			// rewind the data for the next read
-			data.rewind();
-			data.limit(data.capacity());
-			
-			// Check if we are done
-			if (message.remaining() == 0) {
-				ByteBuffer m = message;
-				m.rewind();
-				message = null;
-				header.rewind();
-				// return the message
-				return m;
+			// If we have processed
+			// everything in the data buffer read so far,
+			// rewind everything and reset the limits
+			// allowing new data to be read
+			if (data.position() <= processed.position()) {
+				data.rewind();
+				processed.rewind();
 			}
 		}
 		return null;
