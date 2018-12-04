@@ -1,6 +1,11 @@
 package pfrommer.necro.util;
 
 public interface Display {
+	public int getWidth();
+	public int getHeight();
+	
+	public float getDensity();
+	
 	public float getMouseX();
 	public float getMouseY();
 	

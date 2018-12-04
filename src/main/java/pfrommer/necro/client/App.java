@@ -14,9 +14,7 @@ import pfrommer.necro.util.Renderer;
 public class App {
 	public static final float ARENA_WIDTH = 200;
 	public static final float ARENA_HEIGHT = 200;
-	public static final float CAMERA_WIDTH = 50;
-	public static final float CAMERA_HEIGHT = 50;
-	
+	public static final float CAMERA_PER_INCH = 3f;	
 
 	private boolean host;
 	private String hostname;
@@ -32,6 +30,7 @@ public class App {
 
 	private Client client;
 	private LocalController input;
+	private long playerID;
 
 	// Nothing should happen in the constructor
 	public App(boolean host, String hostname, int port) {
@@ -45,7 +44,6 @@ public class App {
 	
 	public void create(Display display) {
 		clientArena = new Arena(ARENA_WIDTH, ARENA_HEIGHT);
-		
 		if (host) serverArena = new Arena(ARENA_WIDTH, ARENA_HEIGHT);
 		if (host) server = new Server(serverArena, hostname, port);
 		
@@ -62,7 +60,6 @@ public class App {
 		// Update the client arena from the server
 		client.addListener(clientArena);
 		
-		long playerID = 0;
 		try {
 			if (host) server.open();
 			client.open();
@@ -78,7 +75,9 @@ public class App {
 		clientArena.setBackground("files/background.png");
 	}
 
-	public void resize (Display display, int width, int height) {}
+	public void resize (Display display, int width, int height) {
+		
+	}
 
 	public void render (Display display, Renderer r, float dt) {
 		try {
@@ -90,14 +89,17 @@ public class App {
 			e.printStackTrace();
 		}
 		
-		Point cameraPos = clientArena.calcCameraPos(0, CAMERA_WIDTH, CAMERA_HEIGHT);
-		r.orthoCamera(cameraPos.getX(), cameraPos.getY(), CAMERA_WIDTH, CAMERA_HEIGHT);
+		float cameraWidth = CAMERA_PER_INCH *  display.getWidth()  / display.getDensity();
+		float cameraHeight = CAMERA_PER_INCH * display.getHeight() / display.getDensity();
+		
+		Point cameraPos = clientArena.calcCameraPos(playerID, cameraWidth, cameraHeight);
+		r.orthoCamera(cameraPos.getX(), cameraPos.getY(), cameraWidth, cameraHeight);
 		
 		clientArena.render(r, dt);
 		
 		// Handle the local controller
 		input.update(display, cameraPos.getX(), cameraPos.getY(),
-							  CAMERA_WIDTH, CAMERA_HEIGHT, dt);
+							  cameraWidth, cameraHeight, dt);
 
 		try {
 			client.write();

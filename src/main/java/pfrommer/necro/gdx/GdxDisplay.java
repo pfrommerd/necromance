@@ -21,6 +21,11 @@ public class GdxDisplay implements Display {
 	
 	public int getWidth() { return Gdx.graphics.getWidth(); }
 	public int getHeight() { return Gdx.graphics.getHeight(); }
+	
+	public float getDensity() {
+		return Gdx.graphics.getDensity() * 160f;
+	}
+	
 	public float getMouseX() { return x; }
 	public float getMouseY() { return y; }
 	

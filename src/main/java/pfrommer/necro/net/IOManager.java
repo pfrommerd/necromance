@@ -29,6 +29,7 @@ public class IOManager {
 		m.putInt(data.length);
 		m.put(data);
 		m.rewind();
+		channel.write(m);
 	}
 	
 	public ByteBuffer read() throws IOException {
@@ -39,8 +40,8 @@ public class IOManager {
 				data.position() <= processed.position()) {
 			data.rewind();
 			processed.rewind();
-		}
-				
+		}				
+
 		while (processed.position() < data.position() ||
 				channel.read(data) > 0) {
 			if (header.remaining() > 0) {

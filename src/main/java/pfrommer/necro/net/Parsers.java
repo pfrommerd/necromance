@@ -14,6 +14,8 @@ public class Parsers {
 		
 		Arena.EntityAdded.register();
 		Arena.EntityRemoved.register();
+		Arena.PlayerAdded.register();
+		Arena.PlayerRemoved.register();
 		
 		Unit.Run.register();
 		Unit.Damage.register();

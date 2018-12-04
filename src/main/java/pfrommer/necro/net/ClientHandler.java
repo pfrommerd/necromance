@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Queue;
 
 import pfrommer.necro.game.Arena;
+import pfrommer.necro.game.Entity;
 import pfrommer.necro.game.Event;
 import pfrommer.necro.game.EventListener;
 import pfrommer.necro.net.Client.AssignID;
@@ -28,16 +29,27 @@ public class ClientHandler implements EventListener {
 		// Get a new player ID from the arena
 		// for this player
 		playerID = a.createPlayer();
-		
-		// Write the assign ID message separately
-		Protocol.Message.Builder builder = Protocol.Message.newBuilder();
-		(new AssignID(playerID)).pack(builder.addEventsBuilder());
-		Protocol.Message msg  = builder.build();
+
 		try {
-			io.write(ByteBuffer.wrap(msg.toByteArray()));
+			// Write the assign ID message separately
+			Protocol.Message.Builder builder = Protocol.Message.newBuilder();
+			(new AssignID(playerID)).pack(builder.addEventsBuilder());			
+			io.write(ByteBuffer.wrap(builder.build().toByteArray()));
+			// Now make one big message containing the entire arena state
+			// of all players and all entities
+			builder = Protocol.Message.newBuilder();
+			for (long p : arena.getPlayers()) {
+				(new Arena.PlayerAdded(p)).pack(builder.addEventsBuilder());
+			}
+			for (Entity e : arena.getEntities()) {
+				(new Arena.EntityAdded(e)).pack(builder.addEventsBuilder());
+			}
+			io.write(ByteBuffer.wrap(builder.build().toByteArray()));
 		} catch (IOException e) {
 			throw new IllegalArgumentException("Could not write to the socket channel");
 		}
+		
+
 	}
 	
 	public void disconnect() {
