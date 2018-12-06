@@ -63,7 +63,7 @@ public class SpawnManager {
 		long botID = arena.createBot();
 		// Add a bot controller for this bot
 		Controller c = new BotController(arena, botID);
-		c.addListener(arena);
+		c.addListener(arena); // The arena to list to this controller
 		controllers.add(c);
 	}
 
@@ -85,6 +85,13 @@ public class SpawnManager {
 			}
 			if (skip) continue;
 			
+			// The player is dead, but
+			// remove any units the player owns (which are dead but
+			// we don't want the player reviving the units)
+			for (Unit u : arena.getPlayerUnits(player)) {
+				arena.removeEntity(u);
+			}
+			
 			long newHorde = arena.createHorde();
 			
 			if (player >= 0) {
@@ -97,9 +104,7 @@ public class SpawnManager {
 			}
 		}
 		// Update any bot controllers
-		for (Controller c : controllers) {
-			c.update(dt);
-		}
+		for (Controller c : controllers) c.update(dt);
 	}
 	
 	private Collection<Unit> generateHorde(long playerID, long hordeID,

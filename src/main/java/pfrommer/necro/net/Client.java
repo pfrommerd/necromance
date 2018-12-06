@@ -27,6 +27,9 @@ public class Client implements EventListener {
 	public Client(String host, int port) {
 		this.host = host;
 		this.port = port;
+		
+		// Register all the parsers
+		Parsers.registerAll();
 	}
 	
 	public void addListener(EventListener l) { listeners.add(l); }

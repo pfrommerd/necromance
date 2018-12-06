@@ -1,11 +1,13 @@
 package pfrommer.necro.gdx;
 
+import java.io.File;
 import java.util.HashMap;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.TextureLoader;
-import com.badlogic.gdx.assets.loaders.resolvers.LocalFileHandleResolver;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -16,7 +18,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import pfrommer.necro.util.Color;
 import pfrommer.necro.util.Renderer;
 
-public class GdxRenderer extends Renderer {
+public class GdxRenderer implements Renderer {
 	private enum RenderMode { NONE, BATCH, SHAPES }
 	
 	private OrthographicCamera orthoCam = new OrthographicCamera();
@@ -28,7 +30,15 @@ public class GdxRenderer extends Renderer {
 	private HashMap<String, TextureRegion> textures = new HashMap<String, TextureRegion>();
 	
 	public GdxRenderer() {
-		FileHandleResolver resolver = new LocalFileHandleResolver();
+		FileHandleResolver resolver = new FileHandleResolver() {
+			@Override
+			public FileHandle resolve(String filename) {
+				File f = new File(new File("files"), filename);
+				if (f.exists()) return Gdx.files.absolute(f.getAbsolutePath());
+				else return Gdx.files.classpath("/" + filename);
+			}
+		};
+		
 		manager.setLoader(Texture.class, new TextureLoader(resolver));
 	}
 	

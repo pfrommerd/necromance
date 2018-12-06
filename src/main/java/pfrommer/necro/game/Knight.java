@@ -89,7 +89,7 @@ public class Knight extends Unit {
 			damageAnimation = 0;
 			walkAnimation = 0;
 			attackAnimation = 0;
-			r.drawImage("files/knight_dead.png",
+			r.drawImage("knight_dead.png",
 					getX(), getY() + KNIGHT_DRAW_YOFF,
 						KNIGHT_DRAW_WIDTH, KNIGHT_DRAW_HEIGHT, 0);
 			return;
@@ -112,7 +112,7 @@ public class Knight extends Unit {
 			tint = new Color(1f, progress, progress);
 		}
 		
-		String filename = rightDir ? "files/knight_right" : "files/knight_left";
+		String filename = rightDir ? "knight_right" : "knight_left";
 		if (getTarget() >= 0) {
 			// Get the animation index
 			attackAnimation += dt;

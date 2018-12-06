@@ -48,8 +48,10 @@ public abstract class Unit extends Entity {
 			getArena().deregisterHorde(this, hordeID);
 		}
 		super.setArena(a);
-		a.registerOwner(this, ownerID);
-		a.registerHorde(this, hordeID);
+		if (a != null) {
+			a.registerOwner(this, ownerID);
+			a.registerHorde(this, hordeID);
+		}
 	}
 	
 	public long getOwner() { return ownerID; }
@@ -278,7 +280,9 @@ public abstract class Unit extends Entity {
 		
 		@Override
 		public void apply(Arena a) {
-			Unit u = (Unit) a.getEntity(id);
+			Entity e = a.getEntity(id);
+			if (e == null || !(e instanceof Unit)) return;
+			Unit u = (Unit) e;
 			u.necromance();
 		}
 
@@ -310,8 +314,9 @@ public abstract class Unit extends Entity {
 		
 		@Override
 		public void apply(Arena a) {
-			Unit u = (Unit) a.getEntity(id);
-			u.run(theta, speed);
+			Entity e = a.getEntity(id);
+			if (e == null || !(e instanceof Unit)) return;
+			((Unit) e).run(theta, speed);
 		}
 
 		@Override

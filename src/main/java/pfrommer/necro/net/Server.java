@@ -10,8 +10,13 @@ import java.util.Map.Entry;
 import pfrommer.necro.game.Arena;
 import pfrommer.necro.game.Event;
 import pfrommer.necro.game.EventListener;
+import pfrommer.necro.game.SpawnManager;
 
-public class Server implements EventListener {
+public class Server implements EventListener, Runnable {
+	public static final int SERVER_REFRESH_RATE = 60; // Try and process events about 60 times
+													  // a second, meaning way 1000/60 ms between
+													  // handling events
+	
 	private String host;
 	private int port;
 	
@@ -21,15 +26,21 @@ public class Server implements EventListener {
 	
 	// For creating players/entities
 	private Arena arena;
+	private SpawnManager spawner;
 	
-	public Server(Arena arena, String host, int port) {
+	public Server(Arena arena, SpawnManager spawner, 
+					String host, int port) {
 		if (host == null) throw new IllegalArgumentException();
 		this.arena = arena;
+		this.spawner = spawner;
 		this.host = host;
 		this.port = port;
 		
 		// Add a listener to the arena 
 		this.arena.addListener(this);
+		
+		// Register all the parsers for the server
+		Parsers.registerAll();
 	}
 	
 	
@@ -45,6 +56,10 @@ public class Server implements EventListener {
 		InetSocketAddress addr = new InetSocketAddress(host, port);
 		socket.bind(addr);
 		socket.configureBlocking(false);
+	}
+	
+	public void close() throws IOException {
+		if (socket != null) socket.close();
 	}
 	
 	// Write out any queued events
@@ -79,6 +94,39 @@ public class Server implements EventListener {
 			} else {
 				handler.receiveEvents();
 			}
+		}
+	}
+
+	// Will run the server in a standalone
+	// settting
+	@Override
+	public void run() {
+		try {						
+			long time = System.currentTimeMillis();
+			while (!Thread.interrupted()) {
+				try {
+					Thread.sleep(1000/SERVER_REFRESH_RATE);
+				} catch (InterruptedException e)  {} // Will be handled by !interrupted
+				
+				read();
+				
+				// Move the clock
+				long currentTime = System.currentTimeMillis();
+				float dt = (currentTime - time) / 1000f;
+				time = currentTime;
+				if (arena != null) arena.update(dt);
+				if (spawner != null) spawner.update(dt);
+				
+				// Write out the events
+				write();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Received an exception, exiting server...");
+		} finally {
+			try {
+				close();
+			} catch (IOException e) {} // We don't care if there is an exception
 		}
 	}
 }

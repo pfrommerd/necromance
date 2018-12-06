@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import pfrommer.necro.net.Protocol;
+import pfrommer.necro.net.Protocol.Event.Builder;
 import pfrommer.necro.net.Protocol.Event.TypeCase;
 import pfrommer.necro.util.Point;
 import pfrommer.necro.util.Renderer;
@@ -27,7 +28,7 @@ public class Arena implements EventListener, EventProducer {
 	private Map<Long, Entity> entities = new HashMap<Long, Entity>();
 	
 	// Manages ownership by players and hordes
-	private Map<Long, Set<Unit>> owners = new HashMap<Long, Set<Unit>>();
+	private Map<Long, Set<Unit>> players = new HashMap<Long, Set<Unit>>();
 	private Map<Long, Set<Unit>> hordes = new HashMap<Long, Set<Unit>>();
 	
 	private Set<EventListener> listeners = new HashSet<EventListener>();
@@ -37,12 +38,12 @@ public class Arena implements EventListener, EventProducer {
 	
 	private String background;
 	
-	public Arena(float w, float h) {
-		this.width = w;
-		this.height = h;
-	}
+	public Arena() {}
 	
 	public void setBackground(String img) { background = img; }
+	
+	public void setWidth(float width) { this.width = width; }
+	public void setHeight(float height) { this.height = height; }
 	
 	public float getWidth() { return width; }
 	public float getHeight() { return height; }
@@ -61,30 +62,30 @@ public class Arena implements EventListener, EventProducer {
 		fireEvent(new EntityAdded(e));
 	}
 	
-	public void removeEntity(Entity e) {
-		e.setArena(null);
-		entities.remove(e.getID());
-		
-		fireEvent(new EntityRemoved(e.getID()));
-	}
-	
 	public void addEntities(Collection<? extends Entity> entities) {
 		for (Entity e : entities) {
 			addEntity(e);
 		}
 	}
 	
-	public Set<Unit> getPlayerUnits(long player) {
-		Set<Unit> s = owners.get(player);
-		if (s == null) return Collections.emptySet();
-		return s;
+	public void removeEntity(Entity e) {
+		e.setArena(null);
+		entities.remove(e.getID());
+		
+		fireEvent(new EntityRemoved(e.getID()));
 	}
+
 	
+	public Set<Unit> getPlayerUnits(long player) {
+		Set<Unit> s = players.get(player);
+		if (s == null) return Collections.emptySet();
+		return new HashSet<Unit>(s);
+	}
 	
 	public Set<Unit> getHordeUnits(long hordeID) {
 		Set<Unit> s = hordes.get(hordeID);
 		if (s == null) return Collections.emptySet();
-		return s;
+		return new HashSet<Unit>(s);
 	}
 	
 	public boolean isHordeAlive(long hordeID) {
@@ -106,20 +107,25 @@ public class Arena implements EventListener, EventProducer {
 	// Called to add a player to the owner registry
 	// (that way it can be picked up by the spawn manager)
 	public void addPlayer(long player) {
-		if (!owners.containsKey(player)) {
-			owners.put(player, new HashSet<Unit>());
+		if (!players.containsKey(player)) {
+			players.put(player, new HashSet<Unit>());
 			// Fire player added event
+			fireEvent(new PlayerAdded(player));
 		}
 	}
 	
+	public void addPlayers(Collection<Long> players) {
+		for (long l : players) addPlayer(l);
+	}
+	
 	public Collection<Long> getPlayers() {
-		return owners.keySet();
+		return players.keySet();
 	}
 	
 	// Gets the first open positive id
 	public long createPlayer() {
 		long id = 0;
-		while (owners.containsKey(id)) {
+		while (players.containsKey(id)) {
 			id++;
 		}
 		addPlayer(id);
@@ -128,7 +134,7 @@ public class Arena implements EventListener, EventProducer {
 	
 	public long createBot() {
 		long id = -1;
-		while (owners.containsKey(id)) {
+		while (players.containsKey(id)) {
 			id--;
 		}
 		addPlayer(id);
@@ -147,49 +153,22 @@ public class Arena implements EventListener, EventProducer {
 	// Will also remove all entities associated
 	// with this player (done first)
 	public void removePlayer(long player) {
-		if (owners.containsKey(player)) {
-			Set<Unit> units = owners.get(player);
+		if (players.containsKey(player)) {
+			Set<Unit> units = players.get(player);
 			for (Unit u : units) removeEntity(u);
 			
 			// Remove the player entirely
-			owners.remove(player);
+			players.remove(player);
 			// Fire player removed event
-			
+			fireEvent(new PlayerRemoved(player));
 		}
 	}
 	
-	// The following are package-protected
-	// functions for internal use by entities
-	// to fire events in the arena and register their ownership
-	void registerOwner(Unit u, long owner) {
-		if (!owners.containsKey(owner))
-			owners.put(owner, new HashSet<Unit>());
-		owners.get(owner).add(u);
-	}
-	void deregisterOwner(Unit u, long owner) {
-		if (owners.containsKey(owner)) {
-			owners.get(owner).remove(u);
-		}
-	}
-	
-	void registerHorde(Unit u, long horde) {
-		if (!hordes.containsKey(horde))
-			hordes.put(horde, new HashSet<Unit>());
-		hordes.get(horde).add(u);
-	}
-	
-	void deregisterHorde(Unit u, long hordeID) {
-		if (hordes.containsKey(hordeID)) {
-			hordes.get(hordeID).remove(u);
-			if (hordes.get(hordeID).size() == 0)
-				hordes.remove(hordeID);
-		}
-	}
-	
-	// To be called by entities who want events to be
-	// sent out to the clients
-	void fireEvent(Event e) {
-		for (EventListener l : listeners) l.handleEvent(e);
+	// Creates an info object representing
+	// the state of the arena
+	public ArenaInfo createInfo() {
+		return new ArenaInfo(width, height, new HashSet<>(entities.values()),
+											new HashSet<>(players.keySet()));
 	}
 
 	// Arena is an event listener that consumes events and applies them
@@ -250,9 +229,101 @@ public class Arena implements EventListener, EventProducer {
 		else y = 0;
 		return new Point(x, y);
 	}
+
+	// The following are package-protected
+	// functions for internal use by entities
+	// to fire events in the arena and register their ownership
+	void registerOwner(Unit u, long owner) {
+		if (!players.containsKey(owner))
+			players.put(owner, new HashSet<Unit>());
+		players.get(owner).add(u);
+	}
+	void deregisterOwner(Unit u, long owner) {
+		if (players.containsKey(owner)) {
+			players.get(owner).remove(u);
+		}
+	}
+	
+	void registerHorde(Unit u, long horde) {
+		if (!hordes.containsKey(horde))
+			hordes.put(horde, new HashSet<Unit>());
+		hordes.get(horde).add(u);
+	}
+	
+	void deregisterHorde(Unit u, long hordeID) {
+		if (hordes.containsKey(hordeID)) {
+			hordes.get(hordeID).remove(u);
+			if (hordes.get(hordeID).size() == 0)
+				hordes.remove(hordeID);
+		}
+	}
+	
+	// To be called by entities who want events to be
+	// sent out to the clients
+	void fireEvent(Event e) {
+		for (EventListener l : listeners) l.handleEvent(e);
+	}
 	
 	// Arena-related events
-	// here it is only entity added and entity removed
+	
+	// Arena info serializes all possible
+	// information about an arena for transport over
+	// the network, so we can send it to the clients
+	// upon connecting
+	public static class ArenaInfo extends Event {
+		private float width;
+		private float height;
+		private Set<Entity> entities;
+		private Set<Long> players;
+		
+		public ArenaInfo(float width, float height,
+						  Set<Entity> entities, Set<Long> players) {
+			this.width = width;
+			this.height = height;
+			this.entities = entities;
+			this.players = players;
+		}
+		
+		public float getWidth() { return width; }
+		public float getHeight() { return height; }
+		
+		@Override
+		public void apply(Arena a) {
+			// Add everything to the arena
+			a.setWidth(width);
+			a.setHeight(height);
+			a.addPlayers(players);
+			a.addEntities(entities);
+		}
+
+		@Override
+		public void pack(Builder msg) {
+			Protocol.ArenaInfo.Builder b = msg.getArenaInfoBuilder();
+			b.setWidth(width);
+			b.setHeight(height);
+			for (Entity e : entities) {
+				e.pack(b.addEntitiesBuilder());
+			}
+			for (long l : players) {
+				b.addPlayers(l);
+			}
+		}
+		
+		public static void register() {
+			Event.Parser.add(TypeCase.ARENAINFO, new Event.Parser() {
+				@Override
+				public Event unpack(pfrommer.necro.net.Protocol.Event e) {
+					Protocol.ArenaInfo a = e.getArenaInfo();
+					Set<Entity> en = new HashSet<Entity>();
+					for (Protocol.Entity es : a.getEntitiesList()) {
+						en.add(Entity.unpack(es));
+					}
+					return new ArenaInfo(a.getWidth(), a.getHeight(),
+										 en, new HashSet<>(a.getPlayersList()));
+				}
+			});
+		}
+	}
 	
 	public static class EntityAdded extends Event {
 		private Entity entity;

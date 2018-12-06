@@ -94,7 +94,6 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 				this.x += dx;
 			} while (intersecting());
 		}
-		
 		fireEvent(new Moved(getID(), this.x, this.y));
 	}
 	
@@ -164,8 +163,7 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 		public void apply(Arena a) {
 			Entity e = a.getEntity(unitID);
 			if (e == null) return;
-			Unit u = (Unit) e;
-			u.move(x, y);
+			e.move(x, y);
 		}
 
 		@Override

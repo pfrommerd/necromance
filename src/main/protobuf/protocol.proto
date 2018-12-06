@@ -33,10 +33,18 @@ message Entity {
 //
 
 // The only direct server -> client
-// non-event message
+// non-event messages
 
 message AssignID {
 	int64 id = 1;
+}
+
+message ArenaInfo { // Contains non-entity related information about the arena. Sent only
+					// when connecting after assign id is sent
+	float width = 1;
+	float height = 2;
+	repeated int64 players = 3;
+	repeated Entity entities = 4;
 }
 
 // Server -> client status updates
@@ -100,20 +108,21 @@ message Necromance {
 message Event {
 	oneof type {
 		AssignID assignID = 1;
+		ArenaInfo arenaInfo = 2;
 
-		PlayerAdded playerAdded = 2;
-		PlayerRemoved playerRemoved = 3;
+		PlayerAdded playerAdded = 3;
+		PlayerRemoved playerRemoved = 4;
 
-		EntityAdded entityAdded = 4;
-		EntityRemoved entityRemoved = 5;
+		EntityAdded entityAdded = 5;
+		EntityRemoved entityRemoved = 6;
 
-		OwnerChange ownerChange = 6;
-		Run run = 7; // Unit running
-		Moved moved = 8; // Unit moved
+		OwnerChange ownerChange = 7;
+		Run run = 8; // Unit running
+		Moved moved = 9; // Unit moved
 
-		Damage damage = 9;
-		Target target = 10;
-		Necromance necromance = 11;
+		Damage damage = 10;
+		Target target = 11;
+		Necromance necromance = 12;
 	}
 }
 
