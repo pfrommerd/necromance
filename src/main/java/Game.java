@@ -118,8 +118,10 @@ public class Game {
 		hostfield.setColumns(20);
 		
 		// the text field for the port
+		NumberFormat format = NumberFormat.getIntegerInstance();
+		format.setGroupingUsed(false);
 		final JFormattedTextField portField = 
-				new JFormattedTextField(NumberFormat.getIntegerInstance());
+				new JFormattedTextField(format);
 		portField.setText("6000");
 		portField.setColumns(10);
 		

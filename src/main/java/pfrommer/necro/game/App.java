@@ -2,6 +2,8 @@ package pfrommer.necro.game;
 
 import java.io.IOException;
 
+import javax.swing.JOptionPane;
+
 import pfrommer.necro.net.Client;
 import pfrommer.necro.util.Display;
 import pfrommer.necro.util.Point;
@@ -47,9 +49,11 @@ public class App {
 	public void render (Display display, Renderer r, float dt) {
 		try {
 			// Read any updates
-			client.read();
+			if (client != null) client.read();
 		} catch (IOException e) {
-			e.printStackTrace();
+			// Assume the client disconnected
+			JOptionPane.showMessageDialog(null, "Disconnected!");
+			client = null; // So we don't try to read further
 		}
 		
 		// Render
@@ -70,9 +74,10 @@ public class App {
 
 		try {
 			// Write any events as a result of the controller
-			client.write();
+			if (client != null) client.write();
 		} catch (IOException e) {
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Disconnected!");
+			client = null; // So we don't try to read further
 		}
 	}
 	
