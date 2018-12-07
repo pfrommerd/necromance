@@ -3,11 +3,14 @@ package pfrommer.necro.game;
 import java.io.IOException;
 
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import pfrommer.necro.net.Client;
+import pfrommer.necro.util.Color;
 import pfrommer.necro.util.Display;
 import pfrommer.necro.util.Point;
 import pfrommer.necro.util.Renderer;
+import pfrommer.necro.util.Renderer.TextMode;
 
 public class App {
 	public static final float ARENA_WIDTH = 200;
@@ -72,6 +75,12 @@ public class App {
 		input.update(display, cameraPos.getX(), cameraPos.getY(),
 							  cameraWidth, cameraHeight, dt);
 
+		// Draw the text
+		r.resetCamera();
+		r.drawText(1, 1, 0.05f, new Color(1, 1, 1),
+					TextMode.TOP_RIGHT, "Units: " + input.getUnits().size() +
+									   " Necromanceable: " + input.getNecromanceable().size());
+		
 		try {
 			// Write any events as a result of the controller
 			if (client != null) client.write();
@@ -82,6 +91,8 @@ public class App {
 	}
 	
 	public static class LocalController extends Controller {	
+		private long currentHorde = -1;
+		
 		public LocalController(Arena arena, long playerID) {
 			super(arena, playerID);
 		}
@@ -92,6 +103,24 @@ public class App {
 		public void update(Display display, float cx, float cy,
 											float cw, float ch,
 											float dt) {
+			if (currentHorde > 0 &&
+				currentHorde != arena.getPrimaryHorde(playerID)) {
+				// The horde associated with this player has changed,
+				// show a dialog on death
+				// We need to queue this for later or it gets weird
+				// if we are using the swing backend
+				// and this is in the running thread
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						JOptionPane.showMessageDialog(null,
+							"You died!\nDon't be so dumb next time\nTry again with some more untis.");
+					}
+				});
+
+			}
+			currentHorde = arena.getPrimaryHorde(playerID);
+			
 			// Check if mouse is down and if so, where it is
 			if (display.isLeftButtonDown()) {
 				// Command units to go to the mouse position

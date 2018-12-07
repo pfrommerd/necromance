@@ -144,8 +144,9 @@ public abstract class Unit extends Entity {
 			// reset the health
 			health = maxHealth;
 			targetID = -1;
-			
-			move(this.x, this.y);
+			// reset the movement
+			run(theta, 0);
+			move(x, y); // in case we spawned inside someone
 			
 			fireEvent(new Necromance(getID()));
 		}

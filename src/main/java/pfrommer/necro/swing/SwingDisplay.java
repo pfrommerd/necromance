@@ -31,7 +31,7 @@ public class SwingDisplay implements Display {
 					leftDown = true;
 					justLeftPress = true;
 				}
-				if (e.getButton() == MouseEvent.BUTTON2) {
+				if (e.getButton() == MouseEvent.BUTTON3) {
 					rightDown = true;
 					justRightPress = true;
 				}
@@ -43,7 +43,7 @@ public class SwingDisplay implements Display {
 					leftDown = false;
 					justLeftLift = true;
 				}
-				if (e.getButton() == MouseEvent.BUTTON2) {
+				if (e.getButton() == MouseEvent.BUTTON3) {
 					rightDown = false;
 					justRightLift = true;
 				}

@@ -82,6 +82,17 @@ public class Arena implements EventListener, EventProducer {
 		return new HashSet<Unit>(s);
 	}
 	
+	
+	public Set<Unit> getLivingPlayerUnits(long player) {
+		Set<Unit> s = players.get(player);
+		if (s == null) return Collections.emptySet();
+		Set<Unit> l = new HashSet<Unit>();
+		for (Unit u : s) {
+			if (u.getHealth() > 0) l.add(u);
+		}
+		return l;
+	}
+	
 	public Set<Unit> getHordeUnits(long hordeID) {
 		Set<Unit> s = hordes.get(hordeID);
 		if (s == null) return Collections.emptySet();

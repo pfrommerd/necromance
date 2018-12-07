@@ -20,6 +20,8 @@ public class SwingRenderer implements Renderer {
 	private float cx, cy, cw, ch;
 	
 	private Map<String, BufferedImage> imgMap = new HashMap<>();
+	// Colored versions of the images
+	private Map<String, Map<Color, BufferedImage>> coloredMap = new HashMap<>();
 	
 	public SwingRenderer(JPanel panel) {
 		this.panel = panel;
@@ -27,7 +29,12 @@ public class SwingRenderer implements Renderer {
 	
 	public void useGraphics(Graphics2D g) {
 		this.graphics = g;
-		cx = 0; cy = 0; cw = 1; ch = 1;
+		cx = 0; cy = 0; cw = 2; ch = 2;
+	}
+	
+	@Override
+	public void resetCamera() {
+		cx = 0; cy = 0; cw = 2; ch = 2;
 	}
 	
 	@Override
@@ -39,9 +46,9 @@ public class SwingRenderer implements Renderer {
 	@Override
 	public void drawRectangle(Color c, float x, float y, float w, float h, float rot) {
 		graphics.setColor(new java.awt.Color((int) (255 *c.getRed()),
-											 (int) (255 *c.getGreen()),
-											 (int) (255 *c.getBlue()),
-											 (int) (255 *c.getAlpha()) ));
+				 (int) (255 *c.getGreen()),
+				 (int) (255 *c.getBlue()),
+				 (int) (255 *c.getAlpha()) ));
 		graphics.drawRect(panel.getWidth()/2 + (int) (panel.getWidth() * (x - w/2 - cx)/cw),
   				panel.getHeight()/2 - (int) (panel.getHeight() * (y + h/2 - cy)/ch),
   				(int) (panel.getWidth() * w / cw),
@@ -50,14 +57,14 @@ public class SwingRenderer implements Renderer {
 	}
 
 	@Override
-	public void drawImage(String image, Color tint, float x, float y,
+	public void drawImage(String image, float x, float y,
 								float w, float h, float rot) {
 		// No tint-coloring!
-		drawImage(image, x, y, w, h, rot);
+		drawImage(image, null, x, y, w, h, rot);
 	}
 
 	@Override
-	public void drawImage(String image, float x, float y, float w, float h, float rot) {
+	public void drawImage(String image, Color tint, float x, float y, float w, float h, float rot) {
 		BufferedImage img = imgMap.get(image);
 		if (img == null) {
 			// Load this image
@@ -77,12 +84,75 @@ public class SwingRenderer implements Renderer {
 			imgMap.put(image, img);
 		}
 		
+		if (tint != null) {
+			// Get a tinted version of the image
+			if (!coloredMap.containsKey(image)) coloredMap.put(image, new HashMap<>());
+			Map<Color, BufferedImage> imgs = coloredMap.get(image);
+			if (!imgs.containsKey(tint)) {
+				// Colorize the image and put it in the map
+				imgs.put(tint, SwingRenderer.tintImage(img, tint));
+			}
+			img = imgs.get(tint);
+		}
+		
 		graphics.drawImage(img,
 				panel.getWidth()/2 + (int) (panel.getWidth() * (x - w/2 - cx)/cw),
   				panel.getHeight()/2 - (int) (panel.getHeight() * (y + h/2 - cy)/ch),
   				(int) (panel.getWidth() * w / cw),
   				(int) (panel.getHeight() * h / ch),
 			  					null);
+	}
+	
+	@Override
+	public void drawText(float x, float y, float size, Color c,
+							TextMode mode, String text) {
+		float ns = panel.getHeight() * size / ch;
+		graphics.setFont(graphics.getFont().deriveFont(ns));
+		graphics.setColor(new java.awt.Color((int) (255 *c.getRed()),
+				 (int) (255 *c.getGreen()),
+				 (int) (255 *c.getBlue()),
+				 (int) (255 *c.getAlpha()) ));
+
+		float nx = panel.getWidth()/2 + (panel.getWidth() * (x - cx)/cw);
+		float ny = panel.getHeight()/2 - (panel.getHeight() * (y - cy)/ch);
+		float width = graphics.getFontMetrics().stringWidth(text);
+		float height = graphics.getFontMetrics().getHeight();
+		// Adjust according to the text mode
+		switch (mode) {
+		case BOTTOM_LEFT: break;
+		case BOTTOM_RIGHT: nx -= width; break;
+		case TOP_LEFT: ny += height; break;
+		case TOP_RIGHT: nx -= width; ny += height; break;
+		case CENTER: nx -= width/2; ny += height/2; break;
+		}
+		graphics.drawString(text, nx, ny);
+		
+		graphics.setColor(java.awt.Color.BLACK);
+	}
+	
+	private static BufferedImage tintImage(BufferedImage src, Color c) {
+		// From https://stackoverflow.com/questions/4248104/applying-a-tint-to-an-image-in-java
+	    BufferedImage newImage = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TRANSLUCENT);
+	    Graphics2D graphics = newImage.createGraphics();
+	    graphics.drawImage(src, 0, 0, null);
+	    graphics.dispose();
+	    float r = c.getRed();
+	    float g = c.getGreen();
+	    float b = c.getBlue();
+	    // Color image
+	    for (int i = 0; i < newImage.getWidth(); i++) {
+	        for (int j = 0; j < newImage.getHeight(); j++) {
+	            int ax = newImage.getColorModel().getAlpha(newImage.getRaster().getDataElements(i, j, null));
+	            int rx = newImage.getColorModel().getRed(newImage.getRaster().getDataElements(i, j, null));
+	            int gx = newImage.getColorModel().getGreen(newImage.getRaster().getDataElements(i, j, null));
+	            int bx = newImage.getColorModel().getBlue(newImage.getRaster().getDataElements(i, j, null));
+	            rx *= r;
+	            gx *= g;
+	            bx *= b;
+	            newImage.setRGB(i, j, (ax << 24) | (rx << 16) | (gx << 8) | (bx << 0));
+	        }
+	    }
+	    return newImage;
 	}
 
 }

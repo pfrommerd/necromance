@@ -8,7 +8,7 @@ import pfrommer.necro.util.Point;
 
 public abstract class Controller implements EventProducer {
 	protected Arena arena;
-	private long playerID;
+	protected long playerID;
 	// All units this controller owns
 	private Set<EventListener> listeners = new HashSet<>();
 	
@@ -70,13 +70,12 @@ public abstract class Controller implements EventProducer {
 		}
 	}
 	protected Collection<Unit> getUnits() {
-		return arena.getPlayerUnits(playerID);
+		return arena.getLivingPlayerUnits(playerID);
 	}
 
 	protected Collection<Unit> getNecromanceable() {
 		Set<Unit> n = new HashSet<Unit>();
-		Collection<Unit> units = getUnits();
-		for (Unit u : units) {
+		for (Unit u : arena.getPlayerUnits(playerID)) {
 			if (u.getHealth() > 0) continue;
 			if (!arena.isHordeAlive(u.getHorde()) &&
 					arena.getPrimaryHorde(playerID) > 0) {
