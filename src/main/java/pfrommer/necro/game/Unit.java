@@ -67,11 +67,6 @@ public abstract class Unit extends Entity {
 	public float getMaxSpeed() { return maxSpeed; }
 	public float getMaxHealth() { return maxHealth; }
 	
-	// Should be overridden by subtypes
-	// if they want to do special graphics stuff on certain events
-	// getting triggered
-	protected void onDamage(float damage) {}
-
 	protected Set<Unit> getTargetsWithin(float radius) {
 		if (getCollider() == null) return Collections.emptySet();
 		
@@ -81,7 +76,7 @@ public abstract class Unit extends Entity {
 				Unit u = (Unit) e;
 				if (u.getCollider() == null) continue;
 				if (u.getOwner() == ownerID ||
-						u.getOwner() < 0 && ownerID < 0 || // If two bot players (bots have - player IDs)
+						u.getOwner() < 0 && ownerID < 0 || // If two bot players (bots have - player IDs), ignore each other
 						u.getHealth() <= 0)
 						continue;
 				float distance = getCollider().distanceTo(u.getCollider());
@@ -109,7 +104,6 @@ public abstract class Unit extends Entity {
 	protected void run(float theta, float speed) {
 		if (speed != 0) this.theta = theta;
 		this.speed = Math.min(speed, maxSpeed);
-
 		fireEvent(new Run(getID(), theta, this.speed));
 	}
 	
@@ -118,8 +112,6 @@ public abstract class Unit extends Entity {
 		if (health < 0) {
 			health = 0;
 		}
-		
-		onDamage(damage); // Notify subtypes for rendering
 		fireEvent(new Damage(getID(), attacker.getID(), damage));
 		
 		if (health == 0) {
@@ -127,12 +119,14 @@ public abstract class Unit extends Entity {
 			// Horde owner stays the same (until necromance is called!)
 		}
 	}
-	
+
 	protected void necromance() {
 		if (health <= 0 && !getArena().isHordeAlive(hordeID)) {
 			// All of them are dead, now:
 			// NECROMANCE!
-			
+			// reset the movement
+			run(theta, 0);
+			move(x, y); // in case we spawned inside someone
 			// Get any living units for this user
 			// and necromance so that they have the same ID
 			long newHordeID =  getArena().getPrimaryHorde(ownerID);
@@ -144,10 +138,6 @@ public abstract class Unit extends Entity {
 			// reset the health
 			health = maxHealth;
 			targetID = -1;
-			// reset the movement
-			run(theta, 0);
-			move(x, y); // in case we spawned inside someone
-			
 			fireEvent(new Necromance(getID()));
 		}
 	}
@@ -155,7 +145,6 @@ public abstract class Unit extends Entity {
 	protected void target(Unit target) {
 		if (target != null) this.targetID = target.getID();
 		else this.targetID = -1;
-
 		fireEvent(new Target(getID(), targetID));
 	}
 	

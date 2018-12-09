@@ -1,5 +1,6 @@
 package pfrommer.necro.game;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,10 +38,12 @@ public class Arena implements EventListener, EventProducer {
 	private float width, height;
 	
 	private String background;
+	private long largestID; // The ID of the largest entity in the arena
 	
 	public Arena() {}
 	
 	public void setBackground(String img) { background = img; }
+	public String getBackground() { return background; }
 	
 	public void setWidth(float width) { this.width = width; }
 	public void setHeight(float height) { this.height = height; }
@@ -48,24 +51,36 @@ public class Arena implements EventListener, EventProducer {
 	public float getWidth() { return width; }
 	public float getHeight() { return height; }
 	
+	public long getLargestID() { return largestID; }
+	
 	public void addListener(EventListener l) { listeners.add(l); }
 	public void removeListener(EventListener l) { listeners.remove(l); }
 	
-	public Entity getEntity(long entityID) { return entities.get(entityID); }
-	public Collection<Entity> getEntities() { return entities.values(); }
+	// --------------------------------
+	// Entity-related methods
+	// --------------------------------
 	
+	public Entity getEntity(long entityID) {
+		return entities.get(entityID);
+	}
+
+	public Collection<Entity> getEntities() {
+		return new ArrayList<>(entities.values()); // Return a copy so entites getting removed in
+												   // the original set don't affect the returned set
+	}
+
 	public void addEntity(Entity e) {
+		if (e == null) return;
 		if (entities.containsKey(e.getID())) return;
 		e.setArena(this);
 		entities.put(e.getID(), e);	
+		if (e.getID() > largestID) largestID = e.getID();
 		
 		fireEvent(new EntityAdded(e));
 	}
 	
 	public void addEntities(Collection<? extends Entity> entities) {
-		for (Entity e : entities) {
-			addEntity(e);
-		}
+		for (Entity e : entities) addEntity(e);
 	}
 	
 	public void removeEntity(Entity e) {
@@ -74,49 +89,18 @@ public class Arena implements EventListener, EventProducer {
 		
 		fireEvent(new EntityRemoved(e.getID()));
 	}
+	
+	public void removeEntities(Collection<? extends Entity> entities) {
+		for (Entity e : entities) removeEntity(e);
+	}
 
-	
-	public Set<Unit> getPlayerUnits(long player) {
-		Set<Unit> s = players.get(player);
-		if (s == null) return Collections.emptySet();
-		return new HashSet<Unit>(s);
+	// ------------------------------------
+	// Player-related methods
+	// =-----------------------------------
+	public Set<Long> getPlayers() {
+		return new HashSet<Long>(players.keySet());
 	}
 	
-	
-	public Set<Unit> getLivingPlayerUnits(long player) {
-		Set<Unit> s = players.get(player);
-		if (s == null) return Collections.emptySet();
-		Set<Unit> l = new HashSet<Unit>();
-		for (Unit u : s) {
-			if (u.getHealth() > 0) l.add(u);
-		}
-		return l;
-	}
-	
-	public Set<Unit> getHordeUnits(long hordeID) {
-		Set<Unit> s = hordes.get(hordeID);
-		if (s == null) return Collections.emptySet();
-		return new HashSet<Unit>(s);
-	}
-	
-	public boolean isHordeAlive(long hordeID) {
-		Set<Unit> s = getHordeUnits(hordeID);
-		for (Unit u : s) {
-			if (u.getHealth() > 0) return true;
-		}
-		return false;
-	}
-	
-	public long getPrimaryHorde(long playerID) {
-		Set<Unit> units = getPlayerUnits(playerID);
-		for (Unit u : units) {
-			if (u.getHealth() > 0) return u.getHorde();
-		}
-		return -1; // No such player or player does not control a horde
-	}
-	
-	// Called to add a player to the owner registry
-	// (that way it can be picked up by the spawn manager)
 	public void addPlayer(long player) {
 		if (!players.containsKey(player)) {
 			players.put(player, new HashSet<Unit>());
@@ -129,20 +113,17 @@ public class Arena implements EventListener, EventProducer {
 		for (long l : players) addPlayer(l);
 	}
 	
-	public Collection<Long> getPlayers() {
-		return players.keySet();
-	}
+	// Some player-creation utility methods:
 	
-	// Gets the first open positive id
+	// Returns the first open positive id and adds a player with that ID
 	public long createPlayer() {
 		long id = 0;
-		while (players.containsKey(id)) {
-			id++;
-		}
+		while (players.containsKey(id)) id++;
 		addPlayer(id);
 		return id;
 	}
 	
+	// Returns the first open negative id and adds a player with that ID
 	public long createBot() {
 		long id = -1;
 		while (players.containsKey(id)) {
@@ -151,21 +132,76 @@ public class Arena implements EventListener, EventProducer {
 		addPlayer(id);
 		return id;
 	}
+
+	// Fetch all the units associated with a player
+	// (that is, units this player can control and necromance)
+	public Set<Unit> getPlayerUnits(long player) {
+		Set<Unit> s = players.get(player);
+		if (s == null) return Collections.emptySet();
+		return new HashSet<Unit>(s);
+	}
 	
+	// Same as the above method, but gets only the living units
+	public Set<Unit> getLivingPlayerUnits(long player) {
+		Set<Unit> s = players.get(player);
+		if (s == null) return Collections.emptySet();
+		Set<Unit> l = new HashSet<Unit>();
+		for (Unit u : s) {
+			if (u.getHealth() > 0) l.add(u);
+		}
+		return l;
+	}	
+	
+	// Gets the horde ID associated with a player
+	public long getPrimaryHorde(long playerID) {
+		Set<Unit> units = getPlayerUnits(playerID);
+		for (Unit u : units) {
+			// All living units should have the same horde ID
+			if (u.getHealth() > 0) return u.getHorde(); 
+		}
+		return -1; // No such player or player does not control a horde
+	}
+	
+	// ----------------------------------
+	// Horde-related methods
+	// ----------------------------------
+	public Set<Long> getHordes() {
+		return new HashSet<>(hordes.keySet());
+	}
+	
+	// Creates a horde with the first
+	// open horde id
 	public long createHorde() {
 		long id = 0;
-		while (hordes.containsKey(id)) {
-			id++;
-		}
+		while (hordes.containsKey(id)) id++;
 		hordes.put(id, new HashSet<>());
 		return id;
 	}
+	
+	public Set<Unit> getHordeUnits(long hordeID) {
+		Set<Unit> s = hordes.get(hordeID);
+		if (s == null) return Collections.emptySet();
+		return new HashSet<Unit>(s);
+	}
+	
+	// Utiltiy method (used by necromancing logic in unit)
+	// to check if every member of a horde has died
+	// to free up the units for necromancing
+	public boolean isHordeAlive(long hordeID) {
+		Set<Unit> s = getHordeUnits(hordeID);
+		if (s == null) return false;
+		for (Unit u : s) {
+			if (u.getHealth() > 0) return true;
+		}
+		return false;
+	}
+
 	
 	// Will also remove all entities associated
 	// with this player (done first)
 	public void removePlayer(long player) {
 		if (players.containsKey(player)) {
-			Set<Unit> units = players.get(player);
+			Set<Unit> units = getPlayerUnits(player);
 			for (Unit u : units) removeEntity(u);
 			
 			// Remove the player entirely
@@ -175,8 +211,8 @@ public class Arena implements EventListener, EventProducer {
 		}
 	}
 	
-	// Creates an info object representing
-	// the state of the arena
+	// Creates an info event representing
+	// the state of the arena (for sending to new clients)
 	public ArenaInfo createInfo() {
 		return new ArenaInfo(width, height, new HashSet<>(entities.values()),
 											new HashSet<>(players.keySet()));
@@ -189,6 +225,8 @@ public class Arena implements EventListener, EventProducer {
 		e.apply(this);
 	}
 
+	// Arena draw method. Will go through all the entities and draw them in
+	// the right z-order
 	public void render(Renderer r, float dt) {
 		if (background != null) r.drawImage(background, 0, 0, width, height, 0);
 		// Draw all of the entities, sorted by their
@@ -208,13 +246,14 @@ public class Arena implements EventListener, EventProducer {
 		}
 	}
 	
-	// Should only be called on the server (or whoever is doing the game logic)
+	// Should only be called on the server (or whoever is running the game logic)
 	// this actually makes all the units' actions/state changes happen
+	// and causes the arena to emit events related to that logic
 	public void update(float dt) {
 		for (Entity e : entities.values()) e.update(this, dt);
 	}
 	
-	// Utility functions
+	// Utility functions for the app to figure out where the camera should be
 	public Point calcCameraPos(long playerID, float camWidth, float camHeight) {
 		// Just go through everything associated with this player
 		// and average the position
@@ -243,7 +282,9 @@ public class Arena implements EventListener, EventProducer {
 
 	// The following are package-protected
 	// functions for internal use by entities
-	// to fire events in the arena and register their ownership
+	// to fire events in the arena and register themselves
+	// with a particular playerID, hordeID
+	
 	void registerOwner(Unit u, long owner) {
 		if (!players.containsKey(owner))
 			players.put(owner, new HashSet<Unit>());

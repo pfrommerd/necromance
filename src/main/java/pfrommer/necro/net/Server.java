@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -43,7 +44,6 @@ public class Server implements EventListener, Runnable {
 		Parsers.registerAll();
 	}
 	
-	
 	@Override
 	public void handleEvent(Event e) {
 		for (ClientHandler c : this.clientHandlerMap.values()) {
@@ -82,13 +82,16 @@ public class Server implements EventListener, Runnable {
 			clientHandlerMap.put(client, new ClientHandler(arena, client));
 		}
 
-		for (Entry<SocketChannel, ClientHandler> e : clientHandlerMap.entrySet()) {
+		// Loop over copy in case we need
+		// to remove a handler
+		for (Entry<SocketChannel, ClientHandler> e :
+				new ArrayList<>(clientHandlerMap.entrySet())) {
 			// We received some bytes!
 			client = e.getKey();
 			ClientHandler handler = e.getValue();
 			if (handler == null)
 				throw new IOException("Unknown client!");
-			if (!client.isConnected()) {
+			if (!client.isConnected() || !client.isOpen()) {
 				handler.disconnect();
 				clientHandlerMap.remove(client);
 			} else {

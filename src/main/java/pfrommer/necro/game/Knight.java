@@ -20,6 +20,9 @@ public class Knight extends Unit {
 	public static final float KNIGHT_ATTACK_DAMAGE = 20f;
 	public static final float KNIGHT_ATTACK_COOLDOWN = 2f;
 
+	public static final float KNIGHT_DEFAULT_HEALTH = 100f;
+	public static final float KNIGHT_DEFAULT_SPEED = 10f;
+	
 	// animation related things
 	// Show red damage for 0.5 seconds
 	
@@ -51,10 +54,10 @@ public class Knight extends Unit {
 	
 	// Creates a new, fully healthy knight
 	// that is targeting nobody
-	public Knight(long id, long ownerID, long hordeID, float x, float y, 
-				   float maxSpeed, float maxHealth) {
+	public Knight(long id, long ownerID, long hordeID, float x, float y) {
 		this(id, ownerID, hordeID, -1, x, y, 0, 0,
-				maxSpeed, maxHealth, maxHealth);
+				KNIGHT_DEFAULT_SPEED,
+				KNIGHT_DEFAULT_HEALTH, KNIGHT_DEFAULT_HEALTH);
 	}
 	
 	public Knight(long id, long ownerID, long hordeID,
@@ -76,7 +79,9 @@ public class Knight extends Unit {
 	// called by unit whenever this unit was damaged
 	// by another
 	@Override
-	protected void onDamage(float damage) {
+	public void damage(Unit attacker, float damage) {
+		super.damage(attacker, damage);
+		
 		// Reset death/damage animation times in case these animations
 		// need to be drawn
 		damageAnimation = KNIGHT_DAMAGE_ANIMATION_TIME; 

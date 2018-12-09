@@ -12,10 +12,11 @@ import java.util.Queue;
 import pfrommer.necro.game.Arena;
 import pfrommer.necro.game.Event;
 import pfrommer.necro.game.EventListener;
+import pfrommer.necro.game.EventProducer;
 import pfrommer.necro.net.Protocol.Event.Builder;
 import pfrommer.necro.net.Protocol.Event.TypeCase;
 
-public class Client implements EventListener {
+public class Client implements EventListener, EventProducer {
 	private String host;
 	private int port;
 	// For reading/writing things

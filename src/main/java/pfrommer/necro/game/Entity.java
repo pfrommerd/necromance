@@ -163,7 +163,7 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 		public void apply(Arena a) {
 			Entity e = a.getEntity(unitID);
 			if (e == null) return;
-			e.move(x, y);
+			e.move(x, y); // Update the state on the client, don't re-trigger an event
 		}
 
 		@Override

@@ -20,6 +20,7 @@ public class SwingLauncher implements Runnable {
 	
 
 	public SwingLauncher(Client client) {
+		
 		// Create the application frame
 		JFrame frame = new JFrame("Game");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -28,13 +29,14 @@ public class SwingLauncher implements Runnable {
 		panel.setPreferredSize(new Dimension(600, 600));
 		panel.setFocusable(true);
 
-		frame.getContentPane().add(panel, BorderLayout.CENTER);
-		frame.pack();
-		frame.setVisible(true);
-		
+
 		display = new SwingDisplay(panel);
 		renderer = new SwingRenderer(panel);
 		app = new App(display, client);
+
+		frame.getContentPane().add(panel, BorderLayout.CENTER);
+		frame.pack();
+		frame.setVisible(true);
 	}
 
 	@Override
@@ -68,8 +70,8 @@ public class SwingLauncher implements Runnable {
 			}
 			
 			// Draw the app
-			app.render(display, renderer, dt);
-			display.update();
+			if (app != null) app.render(display, renderer, dt);
+			if (display != null) display.update();
 		}
 	}
 	

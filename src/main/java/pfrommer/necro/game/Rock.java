@@ -6,9 +6,9 @@ import pfrommer.necro.util.Circle;
 import pfrommer.necro.util.Renderer;
 
 public class Rock extends Entity {
-	public static final float ROCK_COLLIDER_RADIUS = 1.0f;
-	public static final float ROCK_IMAGE_WIDTH = 1.0f;
-	public static final float ROCK_IMAGE_HEIGHT = 1.0f;
+	public static final float ROCK_COLLIDER_RADIUS = 2.4f;
+	public static final float ROCK_IMAGE_WIDTH = 5.0f;
+	public static final float ROCK_IMAGE_HEIGHT = 5.0f;
 	
 	public Rock(long id, float x, float y) {
 		super(id, x, y);
@@ -21,7 +21,7 @@ public class Rock extends Entity {
 
 	@Override
 	public void render(Renderer r, float dt) {
-		r.drawImage("rock.png", dt, dt, ROCK_IMAGE_WIDTH, ROCK_IMAGE_HEIGHT, 0);
+		r.drawImage("rock.png", getX(), getY(), ROCK_IMAGE_WIDTH, ROCK_IMAGE_HEIGHT, 0);
 	}
 
 	@Override
@@ -29,7 +29,7 @@ public class Rock extends Entity {
 
 	@Override
 	public void pack(Protocol.Entity.Builder builder) {
-		builder.getRockBuilder(); // Just add a rock type
+		builder.setId(getID()).setX(getX()).setY(getY()).getRockBuilder(); // Just add a rock type, we don't need any extra fields
 	}
 	
 	public static void register() {

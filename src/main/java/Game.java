@@ -20,6 +20,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import pfrommer.necro.game.Arena;
+import pfrommer.necro.game.Rock;
 import pfrommer.necro.game.SpawnManager;
 import pfrommer.necro.net.Client;
 import pfrommer.necro.net.Server;
@@ -61,11 +62,17 @@ public class Game {
 		return Game.class.getClassLoader().getResourceAsStream(name);
 	}
 	
-	
 	public static Arena createArena() {
 		Arena arena = new Arena();
 		arena.setWidth(ARENA_WIDTH);
 		arena.setHeight(ARENA_HEIGHT);
+		
+		// Place 10 rocks in random places
+		for (int i = 0; i < 10; i++) {
+			arena.addEntity(new Rock(i, ARENA_WIDTH * (float) (Math.random() - 0.5f),
+										ARENA_HEIGHT * (float) (Math.random() - 0.5f)));			
+		}
+		
 		return arena;
 	}
 	
@@ -90,11 +97,11 @@ public class Game {
 		return true;
 	}
 	
-	public static boolean launchServer(String host, int port) {
+	public static boolean launchServer(int port) {
 		Arena a = createArena();
 		SpawnManager m = createSpawnManager(a);
 		// Start the server in a separate thread
-		Server s = new Server(a, m, host, port);
+		Server s = new Server(a, m, "0.0.0.0", port);
 		
 		try {
 			s.open();
@@ -123,6 +130,8 @@ public class Game {
 		JTextArea text = new JTextArea(readInstructions());
 		text.setRows(30);
 		text.setColumns(30);
+		text.setLineWrap(true);
+		text.setWrapStyleWord(true);
 		text.setEditable(false);
 		
 		root.add(new JScrollPane(text), BorderLayout.CENTER);
@@ -143,7 +152,7 @@ public class Game {
 		format.setGroupingUsed(false);
 		final JFormattedTextField portField = 
 				new JFormattedTextField(format);
-		portField.setText("6000");
+		portField.setText("6000"); // Default port number
 		portField.setColumns(10);
 		
 		JPanel portPanel = new JPanel();
@@ -176,10 +185,9 @@ public class Game {
 		hostButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String host = hostfield.getText();
 				int port = Integer.parseInt(portField.getText());
-				if (!launchServer(host, port)) return;
-				if (!launchClient(host, port)) return;
+				if (!launchServer(port)) return;
+				if (!launchClient("localhost", port)) return;
 				frame.dispose();
 			}
 		});

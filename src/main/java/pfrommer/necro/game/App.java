@@ -55,8 +55,8 @@ public class App {
 			if (client != null) client.read();
 		} catch (IOException e) {
 			// Assume the client disconnected
-			JOptionPane.showMessageDialog(null, "Disconnected!");
 			client = null; // So we don't try to read further
+			JOptionPane.showMessageDialog(null, "Disconnected!");
 		}
 		
 		// Render
@@ -85,8 +85,8 @@ public class App {
 			// Write any events as a result of the controller
 			if (client != null) client.write();
 		} catch (IOException e) {
-			JOptionPane.showMessageDialog(null, "Disconnected!");
 			client = null; // So we don't try to read further
+			JOptionPane.showMessageDialog(null, "Disconnected!");
 		}
 	}
 	

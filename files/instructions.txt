@@ -1,1 +1,17 @@
-Here are the instructions for my awesome game!
+You are a necromancer in this MULTIPLAYER clone of "Right-Click-to-Necromance!"
+
+Control your little minions by pressing the left mouse button, and they will move in the direction of your mouse.
+
+When your minions get too close to a minion of another enemy horde, they will engage the other horde and deal damage over time (minions will flash red when taking damage)
+
+When all minions in an enemy horde are dead, they can be necromanced by pressing the right mouse button.
+
+The number of minions in your horde and the number of minions you can necromance are displayed in the top right corner.
+
+You lose when all of your minions die, so make sure to choose your engagements wisely. Enemy hordes of minions will spawn over time. These are not meant to pose a serious challenge, but be a source of units.
+
+This is a multiplayer game, meaning the primary focus is on beating other human players, not the AIs. When a player disconnects, all their units and any units which they can necromance are removed.
+
+To host a game, enter the port number you want to host the game on and click "Host." You will auto-join the game you just hosted and the server will shut down when you disconnect.
+
+To join a game, enter the port number and host name of the game you want to join and press "Join."

@@ -51,12 +51,10 @@ public class SpawnManager {
 	private List<Controller> controllers = new ArrayList<>();
 	
 	private Arena arena;
-	private long nextID; // For unit spawning
 	
 	public SpawnManager(Arena arena) {
 		if (arena == null) throw new IllegalArgumentException();
 		this.arena = arena;
-		this.nextID = 0;
 	}
 	
 	public void addBot() {
@@ -65,11 +63,6 @@ public class SpawnManager {
 		Controller c = new BotController(arena, botID);
 		c.addListener(arena); // The arena to list to this controller
 		controllers.add(c);
-	}
-
-	
-	private long nextID() {
-		return nextID++;
 	}
 	
 	public void update(float dt) {
@@ -99,7 +92,7 @@ public class SpawnManager {
 			} else {
 				// Spawn new bot horde now that this one has died
 				Point spawn  = generateBotSpawnpoint();
-				// Generate bot army
+				// Generate bot army, for now all difficulty 0
 				arena.addEntities(generateHorde(player, newHorde, 0f, spawn.getX(), spawn.getY(), 3));
 			}
 		}
@@ -117,14 +110,15 @@ public class SpawnManager {
 			// Generate random theta and radius
 			float x = radius * (float) Math.random() + cx;
 			float y = radius * (float) Math.random() + cy;
-			units.add(generateUnit(playerID, hordeID, difficulty, x, y));
+			units.add(generateUnit(arena.getLargestID() + 1 + i,
+									playerID, hordeID, x, y));
 		}
 		return units;
 	}
 	
-	private Unit generateUnit(long playerID, long hordeID,
-								float difficulty, float x, float y) {
-		return new Knight(nextID(), playerID, hordeID, x, y, 10f, 100f);
+	private Unit generateUnit(long id, long playerID, long hordeID, float x, float y) {
+		return new Knight(id,
+						  playerID, hordeID, x, y);
 	}
 	
 	

@@ -47,9 +47,12 @@ public class ClientHandler implements EventListener {
 
 	}
 	
+	// Will tell the server to
+	// remove this handler and tell
+	// the arena to remove this player
 	public void disconnect() {
-		if (io.isClosed()) return;
 		arena.removePlayer(playerID);
+		if (io.isClosed()) return;
 		try {
 			io.close();
 		} catch (IOException e) {}
@@ -88,7 +91,7 @@ public class ClientHandler implements EventListener {
 		try {
 			io.write(ByteBuffer.wrap(msg.toByteArray()));
 		} catch (IOException ex) {
-			disconnect();
+			io.close(); // We disconnected
 		}
 	}
 	
@@ -100,7 +103,7 @@ public class ClientHandler implements EventListener {
 				onMessage(m);
 			}
 		} catch (IOException ex) {
-			disconnect();
+			io.close(); // We disconnected
 		}
 	}
 }
