@@ -3,7 +3,9 @@ package pfrommer.necro.net;
 import pfrommer.necro.game.Arena;
 import pfrommer.necro.game.Entity;
 import pfrommer.necro.game.Knight;
+import pfrommer.necro.game.Mage;
 import pfrommer.necro.game.Rock;
+import pfrommer.necro.game.Spell;
 import pfrommer.necro.game.Unit;
 
 public class Parsers {
@@ -27,5 +29,7 @@ public class Parsers {
 		
 		Knight.register();
 		Rock.register();
+		Mage.register();
+		Spell.register();
 	}
 }

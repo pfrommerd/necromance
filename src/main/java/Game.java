@@ -18,13 +18,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-
+import pfrommer.necro.net.Client;
+import pfrommer.necro.net.Server;
 import pfrommer.necro.game.Arena;
 import pfrommer.necro.game.Rock;
 import pfrommer.necro.game.SpawnManager;
-import pfrommer.necro.net.Client;
-import pfrommer.necro.net.Server;
 import pfrommer.necro.swing.SwingLauncher;
+
 
 public class Game {
 	public static final String INSTRUCTIONS_FILE = "instructions.txt";

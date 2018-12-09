@@ -10,9 +10,13 @@ message Unit {
 	int64 targetID = 3;
 	float theta = 4;
 	float speed = 5;
-	float maxSpeed = 6;
-	float health = 7;
-	float maxHealth = 8;
+	float health = 6;
+}
+
+message Spell {
+	int64 castingPlayer = 1;
+	float vx = 2;
+	float vy = 3;
 }
 
 // Just a plain entity
@@ -24,7 +28,9 @@ message Entity {
 	float y = 3;
 	oneof type {
 		Rock rock = 4;
-		Unit knight = 5;
+		Spell spell = 5;
+		Unit knight = 6;
+		Unit mage = 7;
 	}
 }
 

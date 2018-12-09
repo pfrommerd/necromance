@@ -117,8 +117,8 @@ public class SpawnManager {
 	}
 	
 	private Unit generateUnit(long id, long playerID, long hordeID, float x, float y) {
-		return new Knight(id,
-						  playerID, hordeID, x, y);
+		return id % 10 != 9 ? new Knight(id, playerID, hordeID, x, y) :
+							 new Mage(id, playerID, hordeID, x, y);
 	}
 	
 	

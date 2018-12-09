@@ -4,11 +4,14 @@ import pfrommer.necro.net.Protocol;
 import pfrommer.necro.net.Protocol.Entity.TypeCase;
 import pfrommer.necro.util.Circle;
 import pfrommer.necro.util.Renderer;
+import pfrommer.necro.util.Sprite;
 
 public class Rock extends Entity {
-	public static final float ROCK_COLLIDER_RADIUS = 2.4f;
+	public static final float ROCK_COLLIDER_RADIUS = 2.0f;
 	public static final float ROCK_IMAGE_WIDTH = 5.0f;
 	public static final float ROCK_IMAGE_HEIGHT = 5.0f;
+	
+	public static final Sprite ROCK_SPRITE = Sprite.load("rock.png");
 	
 	public Rock(long id, float x, float y) {
 		super(id, x, y);
@@ -21,11 +24,11 @@ public class Rock extends Entity {
 
 	@Override
 	public void render(Renderer r, float dt) {
-		r.drawImage("rock.png", getX(), getY(), ROCK_IMAGE_WIDTH, ROCK_IMAGE_HEIGHT, 0);
+		r.drawImage(ROCK_SPRITE, getX(), getY(), ROCK_IMAGE_WIDTH, ROCK_IMAGE_HEIGHT);
 	}
 
 	@Override
-	public void update(Arena a, float dt) {}
+	public void update(float dt) {}
 
 	@Override
 	public void pack(Protocol.Entity.Builder builder) {

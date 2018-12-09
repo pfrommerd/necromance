@@ -54,9 +54,7 @@ public class SwingLauncher implements Runnable {
 		private long lastPaintTime;
 		
 		@Override
-		public void paintComponent(Graphics g) {
-			super.paintComponent(g); // Makes the background
-			
+		public void paintComponent(Graphics g) {			
 			Graphics2D g2d = (Graphics2D) g;
 			renderer.useGraphics(g2d);
 			

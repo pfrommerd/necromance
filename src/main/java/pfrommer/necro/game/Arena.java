@@ -37,13 +37,9 @@ public class Arena implements EventListener, EventProducer {
 	// The arena width and height
 	private float width, height;
 	
-	private String background;
 	private long largestID; // The ID of the largest entity in the arena
 	
 	public Arena() {}
-	
-	public void setBackground(String img) { background = img; }
-	public String getBackground() { return background; }
 	
 	public void setWidth(float width) { this.width = width; }
 	public void setHeight(float height) { this.height = height; }
@@ -228,7 +224,6 @@ public class Arena implements EventListener, EventProducer {
 	// Arena draw method. Will go through all the entities and draw them in
 	// the right z-order
 	public void render(Renderer r, float dt) {
-		if (background != null) r.drawImage(background, 0, 0, width, height, 0);
 		// Draw all of the entities, sorted by their
 		// y coordinate
 		Set<Entity> sortedEntities = new TreeSet<Entity>(new Comparator<Entity>() {
@@ -250,7 +245,7 @@ public class Arena implements EventListener, EventProducer {
 	// this actually makes all the units' actions/state changes happen
 	// and causes the arena to emit events related to that logic
 	public void update(float dt) {
-		for (Entity e : entities.values()) e.update(this, dt);
+		for (Entity e : new ArrayList<>(entities.values())) e.update(dt);
 	}
 	
 	// Utility functions for the app to figure out where the camera should be

@@ -1,6 +1,7 @@
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,13 +35,6 @@ public class ArenaTests {
 	}
 	
 	@Test
-	public void testArenaBackground() {
-		Arena a = new Arena();
-		a.setBackground("foo.png");
-		assertEquals("foo.png", a.getBackground());
-	}
-	
-	@Test
 	public void testEntitiesSameID() {
 		Arena a = new Arena();
 		
@@ -64,7 +58,7 @@ public class ArenaTests {
 		Knight k3 = new Knight(2, 1, 2, 0f, 0f);
 		Knight k4 = new Knight(3, 1, 2, 0f, 0f);
 		Knight k5 = new Knight(4, 1, 2, 0f, 0f);
-		
+		a.addEntities(Arrays.asList(k1, k2, k3, k4, k5));
 		
 		// Check that there are two players, two hordes
 		// and one player has 2 entities, another has 3 (same for the hordes)
@@ -78,6 +72,11 @@ public class ArenaTests {
 		Set<Unit> playerB = a.getPlayerUnits(1);
 		assertEquals(2, playerA.size());
 		assertEquals(3, playerB.size());
-
+		// Check the contains
+		assertTrue(playerA.contains(k1));
+		assertTrue(playerA.contains(k2));
+		assertTrue(playerB.contains(k3));
+		assertTrue(playerB.contains(k4));
+		assertTrue(playerB.contains(k5));
 	}
 }

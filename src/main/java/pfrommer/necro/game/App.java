@@ -11,17 +11,18 @@ import pfrommer.necro.util.Display;
 import pfrommer.necro.util.Point;
 import pfrommer.necro.util.Renderer;
 import pfrommer.necro.util.Renderer.TextMode;
+import pfrommer.necro.util.Sprite;
 
 public class App {
-	public static final float ARENA_WIDTH = 200;
-	public static final float ARENA_HEIGHT = 200;
 	public static final float CAMERA_DIMENSION = 50f;	
+	
+	public static final Sprite BACKGROUND_SPRITE = Sprite.load("background.png");
 	
 	private Arena arena;
 	private Client client;
 	private LocalController input;
 	private long playerID;
-
+	
 	// Nothing should happen in the constructor
 	// besides take a client
 	public App(Display display, Client client) {
@@ -31,8 +32,6 @@ public class App {
 		this.client = client;
 		this.arena = new Arena();
 		
-		arena.setBackground("background.png");
-
 		// Update the client arena from the client events
 		client.addListener(arena);
 		
@@ -67,6 +66,9 @@ public class App {
 		
 		Point cameraPos = arena.calcCameraPos(playerID, cameraWidth, cameraHeight);
 		r.orthoCamera(cameraPos.getX(), cameraPos.getY(), cameraWidth, cameraHeight);
+		
+		// Draw background
+		r.drawImage(BACKGROUND_SPRITE, 0, 0, arena.getWidth(), arena.getHeight());
 		
 		// Draw the arena
 		arena.render(r, dt);
@@ -114,7 +116,7 @@ public class App {
 					@Override
 					public void run() {
 						JOptionPane.showMessageDialog(null,
-							"You died!\nDon't be so dumb next time\nTry again with some more untis.");
+							"You died!\nWhat an accomplishment!\nTry again with some more untis.");
 					}
 				});
 

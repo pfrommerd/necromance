@@ -98,7 +98,7 @@ public abstract class Entity implements Comparable<Entity>, EventProducer {
 	}
 	
 	// Runs the game logic for this entity
-	public abstract void update(Arena a, float dt);
+	public abstract void update(float dt);
 	
 	// Serialization for this entity (different entity to entity)
 	public abstract void pack(Protocol.Entity.Builder builder);

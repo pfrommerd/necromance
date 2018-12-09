@@ -1,72 +1,59 @@
 package pfrommer.necro.game;
 
-import java.util.Set;
-
 import pfrommer.necro.net.Protocol;
 import pfrommer.necro.net.Protocol.Entity.TypeCase;
 import pfrommer.necro.util.Circle;
-import pfrommer.necro.util.Color;
 import pfrommer.necro.util.Renderer;
+import pfrommer.necro.util.Sprite;
+import pfrommer.necro.util.Color;
+import pfrommer.necro.util.SpriteSheet;
 
 public class Knight extends Unit {
 	public static final float KNIGHT_COLLIDER_RADIUS = 0.8f;
 	public static final float KNIGHT_TARGET_RADIUS = 3f; // Fight anyone within this radius of our collider
 	
-	// When we get speed hampering effects
-	public static final float KNIGHT_ATTACK_SPEED_RADIUS = 1f; 
-	// The speed cap when engaged too close (to prevent running away units)
-	public static final float KNIGHT_ATTACK_SPEED_CAP = 0.8f;
-	
 	public static final float KNIGHT_ATTACK_DAMAGE = 20f;
 	public static final float KNIGHT_ATTACK_COOLDOWN = 2f;
 
-	public static final float KNIGHT_DEFAULT_HEALTH = 100f;
-	public static final float KNIGHT_DEFAULT_SPEED = 10f;
+	public static final float KNIGHT_MAX_HEALTH = 100f;
+	public static final float KNIGHT_MAX_SPEED = 10f;
 	
-	// animation related things
-	// Show red damage for 0.5 seconds
+	// for animation timing
 	
-	public static final float KNIGHT_DAMAGE_ANIMATION_TIME = 0.5f;
-	
-	public static final float KNIGHT_WALK_ANIMATION_TIME_FACTOR = 1f; // Mixes in some time-based animation
-	public static final float KNIGHT_WALK_ANIMATION_STEP_TIME = 1f;
-	
-	public static final float KNIGHT_ATTACK_ANIMATION_STEP_TIME = 0.5f;
-	
-	public static final int	  KNIGHT_WALK_ANIMATION_FRAMES = 8;
-	public static final int   KNIGHT_ATTACK_ANIMATION_FRAMES = 4;
-	
+	public static final float KNIGHT_WALK_STEP_TIME = 1f;
+	public static final float KNIGHT_ATTACK_STEP_TIME = 0.5f;
+
 	// image related things
 	
-	public static final float KNIGHT_DRAW_WIDTH = 3;
-	public static final float KNIGHT_DRAW_HEIGHT = 5;
-	public static final float KNIGHT_DRAW_YOFF = 1;
+	public static final SpriteSheet KNIGHT_SPRITES =
+			SpriteSheet.load("knight.png", 1, 4, false);
+
+	public static final float KNIGHT_SPRITE_WIDTH = 3;
+	public static final float KNIGHT_SPRITE_HEIGHT = 5;
+	public static final float KNIGHT_SPRITE_YOFF = 1;
 	
-	// Local variable that does not get forwarded anywhere else
-	// since we only need this where update() is called
-	private float attackCooldown = 0f;
-	
-	// Local variable that is rendering related
-	// and not forwarded anywhere
-	private float damageAnimation = 0f; // Time remaining on the damage animation
-	private float attackAnimation = 0f; // Time elapsed on the attack animation
-	private float walkAnimation = 0f; // Time elapsed on the attack animation
+	public static final Sprite KNIGHT_DEAD =
+			Sprite.load("knight_dead.png");
+
+	public static final float KNIGHT_DEAD_WIDTH = 3;
+	public static final float KNIGHT_DEAD_HEIGHT = 5;
+	public static final float KNIGHT_DEAD_YOFF = 1;
 	
 	// Creates a new, fully healthy knight
 	// that is targeting nobody
 	public Knight(long id, long ownerID, long hordeID, float x, float y) {
-		this(id, ownerID, hordeID, -1, x, y, 0, 0,
-				KNIGHT_DEFAULT_SPEED,
-				KNIGHT_DEFAULT_HEALTH, KNIGHT_DEFAULT_HEALTH);
+		this(id, ownerID, hordeID, -1, x, y, 0, 0, KNIGHT_MAX_HEALTH);
 	}
 	
 	public Knight(long id, long ownerID, long hordeID,
 					long targetID,
 					float x, float y,
-					float theta, float speed, float maxSpeed,
-					float health, float maxHealth) {
+					float theta, float speed,
+					float health) {
 		super(id, ownerID, hordeID, targetID, x, y,
-				theta, speed, maxSpeed, health, maxHealth);
+				theta, speed, health,
+				KNIGHT_MAX_SPEED, KNIGHT_MAX_HEALTH,
+				KNIGHT_TARGET_RADIUS, KNIGHT_ATTACK_COOLDOWN);
 	}
 	
 	@Override
@@ -78,130 +65,47 @@ public class Knight extends Unit {
 	// For changing the render state,
 	// called by unit whenever this unit was damaged
 	// by another
+
 	@Override
-	public void damage(Unit attacker, float damage) {
-		super.damage(attacker, damage);
-		
-		// Reset death/damage animation times in case these animations
-		// need to be drawn
-		damageAnimation = KNIGHT_DAMAGE_ANIMATION_TIME; 
+	public void launchAttack(Unit enemy) {
+		// Knight just does straight damage
+		enemy.damage(getOwner(), KNIGHT_ATTACK_DAMAGE);
 	}
-	
+
 	@Override
-	public void render(Renderer r, float dt) {
+	public void renderUnit(Renderer r, float damageAnimation, 
+					float walkingAnimation, float attackAnimation,
+						boolean faceRight, float dt) {
+		Sprite s = null;
+		Color c = new Color(1, damageAnimation, damageAnimation);
+		float xo = 0, yo = 0; // x and y off
+		float w = 0, h = 0; // x and y off
 		if (getHealth() <= 0) {
-			// Reset out any animations;
-			damageAnimation = 0;
-			walkAnimation = 0;
-			attackAnimation = 0;
-			r.drawImage("knight_dead.png",
-					getX(), getY() + KNIGHT_DRAW_YOFF,
-						KNIGHT_DRAW_WIDTH, KNIGHT_DRAW_HEIGHT, 0);
-			return;
-		}
-		
-		// If we are targeting someone, always face them
-		boolean rightDir = getTheta() >= -(float) Math.PI / 2f &&
-				   getTheta() <= (float) Math.PI / 2f;		
-		if (getTarget() > 0) {
-			Entity e = getArena().getEntity(getTarget());
-			if (e != null) {
-				rightDir = e.getX() - getX() > 0;
-			}
-		}
+			// Draw dead person
+			s = KNIGHT_DEAD;
+			faceRight = true;
+			c = null;
 
-		Color tint = null;
-		if (damageAnimation > 0) {
-			damageAnimation -= dt;
-			float progress = 1 - damageAnimation / KNIGHT_DAMAGE_ANIMATION_TIME;
-			tint = new Color(1f, progress, progress);
-		}
-		
-		String filename = rightDir ? "knight_right" : "knight_left";
-		if (getTarget() >= 0) {
-			// Get the animation index
-			attackAnimation += dt;
-			filename += "_attack_" +
-					(int) (1 + ((attackAnimation / KNIGHT_ATTACK_ANIMATION_STEP_TIME) 
-						% KNIGHT_ATTACK_ANIMATION_FRAMES)) + ".png";
+			w = KNIGHT_DEAD_WIDTH;
+			h = KNIGHT_DEAD_HEIGHT;
+			yo = KNIGHT_DEAD_YOFF;
 		} else {
-			if (getSpeed() > 0) {
-				walkAnimation += dt * getSpeed() +
-								 dt * KNIGHT_WALK_ANIMATION_TIME_FACTOR;
-				// Walk faster the faster we go, but with some base animation speed
-			} else {
-				walkAnimation = 0;
-			}
-			filename += "_walk_" + 
-					(int) ( 1 + ((walkAnimation / KNIGHT_WALK_ANIMATION_STEP_TIME) 
-					% KNIGHT_WALK_ANIMATION_FRAMES)) + ".png";
+			// Draw walking animation
+			s = KNIGHT_SPRITES.get((int) (walkingAnimation / KNIGHT_WALK_STEP_TIME));
+			w = KNIGHT_SPRITE_WIDTH;
+			h = KNIGHT_SPRITE_HEIGHT;
+			yo = KNIGHT_DEAD_YOFF;
 		}
-		r.drawImage(filename, tint,
-				getX(), getY() + KNIGHT_DRAW_YOFF,
-					KNIGHT_DRAW_WIDTH, KNIGHT_DRAW_HEIGHT, 0);
+		r.drawImage(s, c, faceRight, getX() + xo, getY() + yo, w, h);
 	}
-
-	@Override
-	public void update(Arena a, float dt) {
-		if (getHealth() <= 0) return; // If we are dead, do nothing
-		
-		// People we can target
-		Set<Unit> targets = getTargetsWithin(KNIGHT_TARGET_RADIUS);
-
-		// If we are fighting, check if we need to fight
-		// someone else (due to death or them leaving)
-		if (getTarget() >= 0 && !targets.contains(getArena().getEntity(getTarget()))) {
-			target(null);
-		}
 	
-		// If we have no one to target, check the targets
-		// and fight them
-		if (getTarget() < 0 && targets.size() > 0) {
-			target(targets.iterator().next());
-		}
-						
-		// If we are targeting someone and can attack, attack
-		if (getTarget() >= 0 && attackCooldown <= 0) {
-			attackCooldown = KNIGHT_ATTACK_COOLDOWN; // Reset the cooldown
-			// ATTACK!
-			Unit enemy = (Unit) getArena().getEntity(getTarget());
-			enemy.damage(this, KNIGHT_ATTACK_DAMAGE);
-		} else if (attackCooldown > 0) {
-			attackCooldown -= dt; // Decrease the cooldown amount
-		}
-		
-		// If we are not fighting and there are enemies in the vicinity
-		// move towards them unless we have been commanded to move
-		// with above a certain threshold of speed
-		
-		// If we are not fighting and not dead, move
-		// if so commanded
-		if (getSpeed() > 0) {
-			float speed = getSpeed();
-			if (getTarget() >= 0) {
-				// Calculate the distance to the target
-				Entity t = getArena().getEntity(getTarget());
-				if (t != null && t.getCollider() != null && getCollider() != null) {
-					float distance = getCollider().distanceTo(t.getCollider());
-					if (distance < KNIGHT_ATTACK_SPEED_RADIUS)
-						speed *= KNIGHT_ATTACK_SPEED_CAP;
-				}
-			}
-			// Try and move in the specified direction
-			float dx = dt * speed * (float) Math.cos(getTheta());
-			float dy = dt * speed * (float) Math.sin(getTheta());
-			move(getX() + dx, getY() + dy);
-		}
-	}
-
 	@Override
 	public void pack(Protocol.Entity.Builder builder) {
 		builder.setId(getID()).setX(getX()).setY(getY()).getKnightBuilder()
 				.setOwner(getOwner()).setHordeID(getHorde())
 				.setTargetID(getTarget())
 			    .setTheta(getTheta()).setSpeed(getSpeed())
-			    .setMaxSpeed(getMaxSpeed()).setHealth(getHealth())
-			    .setMaxHealth(getMaxHealth());
+			    .setHealth(getHealth());
 	}
 
 	// For unpacking
@@ -213,8 +117,7 @@ public class Knight extends Unit {
 				return new Knight(e.getId(), k.getOwner(),
 						k.getHordeID(), k.getTargetID(),
 						e.getX(), e.getY(),
-						k.getTheta(), k.getSpeed(), k.getMaxSpeed(),
-						k.getHealth(), k.getMaxHealth());
+						k.getTheta(), k.getSpeed(), k.getHealth());
 			}
 		});
 	}
