@@ -49,8 +49,8 @@ public class SpawnManager {
 	}
 	
 	private List<Controller> controllers = new ArrayList<>();
-	
 	private Arena arena;
+	private float difficulty = 10f;
 	
 	public SpawnManager(Arena arena) {
 		if (arena == null) throw new IllegalArgumentException();
@@ -66,6 +66,8 @@ public class SpawnManager {
 	}
 	
 	public void update(float dt) {
+		difficulty += 4 * dt; // Every quarter second- increase difficulty by 1
+
 		// Go through all of the players in the arena
 		// and check if any of them need to be respawned
 		for (long player : arena.getPlayers()) {
@@ -86,14 +88,16 @@ public class SpawnManager {
 			}
 			
 			long newHorde = arena.createHorde();
-			
+
 			if (player >= 0) {
-				arena.addEntities(generateHorde(player, newHorde, 0f, 0f, 0f, 5));
+				arena.addEntities(generateHorde(player, newHorde, 10f, 0f, 0f, 5));
 			} else {
 				// Spawn new bot horde now that this one has died
 				Point spawn  = generateBotSpawnpoint();
+				int num = (int) Math.log(difficulty);
 				// Generate bot army, for now all difficulty 0
-				arena.addEntities(generateHorde(player, newHorde, 0f, spawn.getX(), spawn.getY(), 3));
+				arena.addEntities(generateHorde(player, newHorde, 10f,
+												spawn.getX(), spawn.getY(), num));
 			}
 		}
 		// Update any bot controllers
@@ -117,7 +121,9 @@ public class SpawnManager {
 	}
 	
 	private Unit generateUnit(long id, long playerID, long hordeID, float x, float y) {
-		return id % 10 != 9 ? new Knight(id, playerID, hordeID, x, y) :
+		// Make ~1/7 units a mage
+		return Math.random() < 0.85 ?
+							 new Knight(id, playerID, hordeID, x, y) :
 							 new Mage(id, playerID, hordeID, x, y);
 	}
 	

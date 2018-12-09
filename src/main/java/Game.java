@@ -67,8 +67,9 @@ public class Game {
 		arena.setWidth(ARENA_WIDTH);
 		arena.setHeight(ARENA_HEIGHT);
 		
-		// Place 10 rocks in random places
-		for (int i = 0; i < 10; i++) {
+		// Place 3 rocks in random places
+		// just for decor
+		for (int i = 0; i < 3; i++) {
 			arena.addEntity(new Rock(i, ARENA_WIDTH * (float) (Math.random() - 0.5f),
 										ARENA_HEIGHT * (float) (Math.random() - 0.5f)));			
 		}
