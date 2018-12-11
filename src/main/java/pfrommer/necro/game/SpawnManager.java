@@ -37,20 +37,23 @@ public class SpawnManager {
 
 		@Override
 		public void update(float dt) {
-			Point pos = getAveragePosition();
-			if (pos == null) return; // No units on field
 			Point target = targetPoints.get(currentTarget % targetPoints.size());
-			if  (pos.distanceTo(target) < BOT_CONTROL_ACCURACY) {
-				currentTarget++;
-				target = targetPoints.get(currentTarget % targetPoints.size());
+			for (Unit u : getUnits() ) {
+				// If any of the units are close enough, move
+				// somewhere else
+				Point pos = new Point(u.getX(), u.getY());
+				if  (pos.distanceTo(target) < BOT_CONTROL_ACCURACY) {
+					currentTarget++;
+				}
 			}
+			target = targetPoints.get(currentTarget % targetPoints.size());
 			command(target.getX(), target.getY(), 5f);
 		}
 	}
 	
 	private List<Controller> controllers = new ArrayList<>();
 	private Arena arena;
-	private float difficulty = 10f;
+	private float difficulty = 1f;
 	
 	public SpawnManager(Arena arena) {
 		if (arena == null) throw new IllegalArgumentException();
@@ -66,7 +69,7 @@ public class SpawnManager {
 	}
 	
 	public void update(float dt) {
-		difficulty += 4 * dt; // Every quarter second- increase difficulty by 1
+		difficulty += dt; // Every second- increase difficulty by 1
 
 		// Go through all of the players in the arena
 		// and check if any of them need to be respawned
@@ -94,7 +97,7 @@ public class SpawnManager {
 			} else {
 				// Spawn new bot horde now that this one has died
 				Point spawn  = generateBotSpawnpoint();
-				int num = (int) Math.log(difficulty);
+				int num = (int) Math.log(8 * difficulty);
 				// Generate bot army, for now all difficulty 0
 				arena.addEntities(generateHorde(player, newHorde, 10f,
 												spawn.getX(), spawn.getY(), num));

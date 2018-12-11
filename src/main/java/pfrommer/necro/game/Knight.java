@@ -73,7 +73,7 @@ public class Knight extends Unit {
 	}
 
 	@Override
-	public void renderUnit(Renderer r, float damageAnimation, 
+	protected void renderUnit(Renderer r, float damageAnimation, 
 					float walkingAnimation, float attackAnimation,
 						boolean faceRight, float dt) {
 		Sprite s = null;

@@ -282,7 +282,7 @@ public class Arena implements EventListener, EventProducer {
 	
 	void registerOwner(Unit u, long owner) {
 		if (!players.containsKey(owner))
-			players.put(owner, new HashSet<Unit>());
+			addPlayer(owner);
 		players.get(owner).add(u);
 	}
 	void deregisterOwner(Unit u, long owner) {

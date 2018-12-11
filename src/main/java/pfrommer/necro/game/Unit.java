@@ -134,8 +134,9 @@ public abstract class Unit extends Entity {
 	
 	protected void damage(long attackingPlayer, float damage) {
 		health -= damage;
-		if (health < 0) {
+		if (health <= 0) {
 			health = 0;
+			run(0, 0);
 		}
 		fireEvent(new Damage(getID(), attackingPlayer, damage));
 		
@@ -255,7 +256,7 @@ public abstract class Unit extends Entity {
 	// For the subtype when we actually attack
 	public abstract void launchAttack(Unit enemy);
 	
-	public abstract void renderUnit(Renderer r,
+	protected abstract void renderUnit(Renderer r,
 							float damageAnimation,
 							float walkingAnimation,
 							float attackAnimation,
