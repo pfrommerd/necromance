@@ -28,7 +28,6 @@ import pfrommer.necro.swing.SwingLauncher;
 
 public class Game {
 	public static final String INSTRUCTIONS_FILE = "instructions.txt";
-	public static final String HIGHSCORE_FILE = ".necro_highscores";
 	
 	// Just hardcode these here for now
 	public static final int ARENA_WIDTH = 200;

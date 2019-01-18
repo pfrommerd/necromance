@@ -92,11 +92,36 @@ public class App {
 		}
 	}
 	
-	public static class LocalController extends Controller {	
-		private long currentHorde = -1;
+
+	public static class LocalController extends Controller {
+		private boolean justDied = false;
 		
 		public LocalController(Arena arena, long playerID) {
 			super(arena, playerID);
+			arena.addListener(new EventListener() {
+				@Override
+				public void handleEvent(Event e) {
+					// If we have some reason to check the player
+					// health status....
+					if (!((e instanceof Arena.EntityRemoved) ||
+						 (e instanceof Unit.OwnerChange))) return;
+					if (arena.getLivingPlayerUnits(playerID).size() == 0 && !justDied) {
+						// The horde associated with this player has changed,
+						// show a dialog on death
+						// We need to queue this for later or it gets weird
+						// if we are using the swing backend
+						// and this is in the running thread
+						justDied = true;
+						SwingUtilities.invokeLater(new Runnable() {
+							@Override
+							public void run() {
+								JOptionPane.showMessageDialog(null,
+									"You died!\nWhat an accomplishment!\nTry again with some more units.");
+							}
+						});
+					}
+				}
+			});
 		}
 		
 		// We need more things, so ignore this for now
@@ -105,24 +130,7 @@ public class App {
 		public void update(Display display, float cx, float cy,
 											float cw, float ch,
 											float dt) {
-			if (currentHorde > 0 &&
-				currentHorde != arena.getPrimaryHorde(playerID)) {
-				// The horde associated with this player has changed,
-				// show a dialog on death
-				// We need to queue this for later or it gets weird
-				// if we are using the swing backend
-				// and this is in the running thread
-				SwingUtilities.invokeLater(new Runnable() {
-					@Override
-					public void run() {
-						JOptionPane.showMessageDialog(null,
-							"You died!\nWhat an accomplishment!\nTry again with some more untis.");
-					}
-				});
-
-			}
-			currentHorde = arena.getPrimaryHorde(playerID);
-			
+			if (getUnits().size() > 0) justDied = false; // We're alive again
 			// Check if mouse is down and if so, where it is
 			if (display.isLeftButtonDown()) {
 				// Command units to go to the mouse position
